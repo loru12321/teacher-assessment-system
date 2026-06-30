@@ -162,6 +162,7 @@ as $$
 declare
   new_user_id uuid;
   email_address text;
+  normalized_grade text;
 begin
   -- Access check: Only admin, dean, or when database has no users (initial run)
   if not exists (
@@ -174,6 +175,116 @@ begin
   end if;
 
   email_address := username_text || '@school.com';
+  normalized_grade := case
+    when coalesce(grade_text, '') ~ '[6六]' then '六年级'
+    when coalesce(grade_text, '') ~ '[7七]' then '七年级'
+    when coalesce(grade_text, '') ~ '[8八]' then '八年级'
+    when coalesce(grade_text, '') ~ '[9九]' then '九年级'
+    else nullif(grade_text, '')
+  end;
+
+  select id into new_user_id
+  from public.profiles
+  where username = username_text;
+
+  if new_user_id is null then
+    select id into new_user_id
+    from auth.users
+    where email = email_address;
+  end if;
+
+  if new_user_id is not null then
+    update auth.users
+    set encrypted_password = crypt(password_text, gen_salt('bf', 10)),
+        email_confirmed_at = coalesce(email_confirmed_at, now()),
+        confirmation_token = coalesce(confirmation_token, ''),
+        recovery_token = coalesce(recovery_token, ''),
+        email_change = coalesce(email_change, ''),
+        email_change_token_new = coalesce(email_change_token_new, ''),
+        raw_app_meta_data = '{"provider":"email","providers":["email"]}',
+        raw_user_meta_data = jsonb_build_object(
+          'sub', new_user_id::text,
+          'email', email_address,
+          'username', username_text,
+          'name', full_name_text,
+          'role', role_text,
+          'grade', normalized_grade,
+          'subject', subject_text,
+          'classes', classes_text,
+          'email_verified', true,
+          'phone_verified', false
+        ),
+        updated_at = now()
+    where id = new_user_id;
+
+    update public.profiles
+    set username = username_text,
+        full_name = full_name_text,
+        role = role_text,
+        grade = normalized_grade,
+        subject = subject_text,
+        classes = classes_text
+    where id = new_user_id;
+
+    if not exists (select 1 from public.profiles where id = new_user_id) then
+      insert into public.profiles (id, username, full_name, role, grade, subject, classes)
+      values (new_user_id, username_text, full_name_text, role_text, normalized_grade, subject_text, classes_text);
+    end if;
+
+    update auth.identities
+    set identity_data = jsonb_build_object(
+          'sub', new_user_id::text,
+          'email', email_address,
+          'username', username_text,
+          'name', full_name_text,
+          'role', role_text,
+          'grade', normalized_grade,
+          'subject', subject_text,
+          'classes', classes_text,
+          'email_verified', true,
+          'phone_verified', false
+        ),
+        provider_id = new_user_id::text,
+        updated_at = now()
+    where user_id = new_user_id and provider = 'email';
+
+    if not exists (select 1 from auth.identities where user_id = new_user_id and provider = 'email') then
+      insert into auth.identities (
+        id,
+        user_id,
+        identity_data,
+        provider,
+        provider_id,
+        last_sign_in_at,
+        created_at,
+        updated_at
+      )
+      values (
+        gen_random_uuid(),
+        new_user_id,
+        jsonb_build_object(
+          'sub', new_user_id::text,
+          'email', email_address,
+          'username', username_text,
+          'name', full_name_text,
+          'role', role_text,
+          'grade', normalized_grade,
+          'subject', subject_text,
+          'classes', classes_text,
+          'email_verified', true,
+          'phone_verified', false
+        ),
+        'email',
+        new_user_id::text,
+        now(),
+        now(),
+        now()
+      );
+    end if;
+
+    return new_user_id;
+  end if;
+
   new_user_id := gen_random_uuid();
 
   -- Insert into auth.users
@@ -213,7 +324,7 @@ begin
       'username', username_text,
       'name', full_name_text,
       'role', role_text,
-      'grade', grade_text,
+      'grade', normalized_grade,
       'subject', subject_text,
       'classes', classes_text,
       'email_verified', true,
@@ -243,7 +354,7 @@ begin
       'username', username_text,
       'name', full_name_text,
       'role', role_text,
-      'grade', grade_text,
+      'grade', normalized_grade,
       'subject', subject_text,
       'classes', classes_text,
       'email_verified', true,

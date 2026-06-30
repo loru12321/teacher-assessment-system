@@ -1746,7 +1746,7 @@
                                 };
                                 const role = roleMap[roleText] || (mode === 'teacher' ? 'teacher' : 'teacher');
                                 
-                                const grade = String(row["年级"] || "").trim();
+                                const grade = normalizeGrade(String(row["年级"] || "").trim());
                                 const subject = String(row["学科"] || row["科目"] || "").trim();
                                 const classes = String(row["任课班级"] || row["班级"] || "").trim();
                                 
