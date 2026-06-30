@@ -3,9 +3,9 @@
 Static prototype for middle-school teacher teaching quality assessment.
 
 The current single-page version supports role login, Excel import for teachers
-and accounts, grade-based project assignment, leader score entry, and admin/dean
-summary views. Teacher score assessment and class assessment are calculated as
-parallel totals with separate rankings.
+and accounts, grade-based project assignment, leader score entry, and
+admin/research-leader summary views. Teacher score assessment and class
+assessment are calculated as parallel totals with separate rankings.
 
 ## Files
 
@@ -23,13 +23,14 @@ Default demo password for built-in accounts:
 Roles:
 
 - Admin
-- Dean
+- Research leader
 - Assessment leader
 - Assessed teacher
 
-Default leaders include four assessment leaders for each grade from Grade 6 to
-Grade 9. Project ownership is assigned in the app, not through the Excel import
-template.
+Default accounts include one admin, one research leader, and four assessment
+leaders for each grade from Grade 6 to Grade 9. Each grade starts with a
+different project assignment plan. Project ownership is assigned in the app, not
+through the Excel import template.
 
 ## Supabase
 

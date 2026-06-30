@@ -16,6 +16,12 @@
             --line: #e2e8f0;
             --blue: #2563eb;
             --blue-soft: #dbeafe;
+            --pink: #fe2c55;
+            --pink-soft: #fff1f4;
+            --cyan: #08b8b4;
+            --cyan-soft: #e9fbfa;
+            --wine: #8e354a;
+            --paper: #f7f5f0;
             --green: #059669;
             --green-soft: #d1fae5;
             --orange: #d97706;
@@ -24,8 +30,9 @@
             --red-soft: #fee2e2;
             --purple: #7c3aed;
             --purple-soft: #ede9fe;
-            --shadow: 0 18px 45px -38px rgba(15, 23, 42, .48);
-            --radius: 16px;
+            --shadow: 0 12px 32px rgba(15, 23, 42, .06);
+            --shadow-strong: 0 18px 42px rgba(15, 23, 42, .08);
+            --radius: 8px;
         }
 
         * { box-sizing: border-box; }
@@ -472,14 +479,185 @@
         .login-card strong { font-size: 14px; }
         .login-card span { color: var(--muted); font-size: 12px; }
 
+        /* 校衡台式工作台皮肤：浅灰画布、侧栏导航、紧凑白色面板 */
+        body {
+            background:
+                linear-gradient(90deg, rgba(254, 44, 85, .045), transparent 28%),
+                radial-gradient(circle at 84% 10%, rgba(8, 184, 180, .10), transparent 32vw),
+                var(--bg);
+        }
+        .app-shell {
+            display: grid;
+            grid-template-columns: 248px minmax(0, 1fr);
+            gap: 16px;
+            align-items: start;
+        }
+        .topbar {
+            margin: 0;
+            border-bottom-color: rgba(219, 229, 242, .72);
+            background: rgba(247, 249, 252, .86);
+        }
+        .topbar-inner {
+            width: min(1500px, calc(100% - 36px));
+            margin: 0 auto;
+        }
+        .topbar-inner {
+            min-height: 58px;
+        }
+        .brand-mark,
+        .icon-box {
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--blue), var(--cyan));
+        }
+        .session .btn,
+        .user-pill,
+        .session select,
+        .field input,
+        .field select,
+        .field textarea,
+        td input,
+        td select,
+        td textarea {
+            border-color: var(--line);
+            border-radius: 8px;
+            box-shadow: none;
+        }
+        .btn {
+            border-radius: 8px;
+            font-weight: 750;
+            box-shadow: none;
+        }
+        .btn:hover {
+            border-color: var(--line);
+            background: #ffffff;
+            box-shadow: 0 10px 20px rgba(15, 23, 42, .06);
+        }
+        .hero {
+            grid-column: 1 / -1;
+            margin: 0;
+        }
+        .hero-card {
+            padding: 22px;
+            overflow: hidden;
+            border-left: 4px solid var(--pink);
+            background:
+                linear-gradient(90deg, rgba(255, 255, 255, .98) 0%, rgba(255, 255, 255, .96) 62%, rgba(239, 246, 255, .96) 100%),
+                linear-gradient(135deg, rgba(254, 44, 85, .10), rgba(8, 184, 180, .10));
+        }
+        .hero-card h1 {
+            font-size: clamp(24px, 3vw, 36px);
+            line-height: 1.18;
+        }
+        .kicker {
+            color: #c81e44;
+        }
+        .hero-card,
+        .panel,
+        .card,
+        .metric,
+        .table-wrap,
+        .project-card,
+        .login-hero,
+        .login-form {
+            border-color: var(--line);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+        .panel-head,
+        .card,
+        .metric {
+            background: rgba(255, 255, 255, .96);
+        }
+        .nav-tabs {
+            top: 82px;
+            display: grid;
+            gap: 8px;
+            overflow: visible;
+            padding: 12px;
+            margin-bottom: 0;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, .90);
+            box-shadow: var(--shadow);
+        }
+        .tab-btn {
+            justify-content: flex-start;
+            border-radius: 8px;
+        }
+        .tab-btn.active {
+            border-color: transparent;
+            background: linear-gradient(135deg, var(--pink), #ff7a59);
+            color: #ffffff;
+            box-shadow: 0 12px 24px rgba(254, 44, 85, .20);
+        }
+        .view {
+            grid-column: 2;
+        }
+        .badge {
+            border-radius: 999px;
+        }
+        .project-list {
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
+        .check-chip:hover {
+            border-color: #bfdbfe;
+            background: var(--blue-soft);
+        }
+        .grade-assignment {
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: rgba(255, 255, 255, .96);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .grade-assignment + .grade-assignment {
+            margin-top: 12px;
+        }
+        .grade-assignment summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 16px 18px;
+            cursor: pointer;
+            list-style: none;
+            background: linear-gradient(180deg, #ffffff, #f8fafc);
+            font-weight: 900;
+        }
+        .grade-assignment summary::-webkit-details-marker {
+            display: none;
+        }
+        .grade-assignment summary::after {
+            content: "展开/收起";
+            color: var(--muted);
+            font-size: 12px;
+            font-weight: 800;
+        }
+        .grade-assignment-body {
+            padding: 14px;
+            border-top: 1px solid var(--line);
+        }
+        .login-screen {
+            background:
+                radial-gradient(circle at top left, rgba(142, 53, 74, .08), transparent 32%),
+                radial-gradient(circle at bottom right, rgba(214, 202, 178, .5), transparent 28%),
+                var(--paper);
+        }
+        .login-hero {
+            background: linear-gradient(135deg, #ffffff 0%, #fcfbf8 52%, #eff6ff 100%);
+        }
+
         @media (max-width: 1020px) {
             .app-shell { width: min(100% - 24px, 820px); }
+            .app-shell { display: block; }
             .topbar-inner, .session { align-items: stretch; flex-direction: column; }
             .brand { min-width: 0; }
             .session select { min-width: 0; width: 100%; }
             .hero, .grid.cols-2, .grid.cols-3, .grid.cols-4, .form-row, .login-panel { grid-template-columns: 1fr; }
             .panel-head { flex-direction: column; }
             .nav-tabs { top: 110px; }
+            .nav-tabs { display: flex; overflow-x: auto; margin-bottom: 16px; }
+            .view { grid-column: auto; }
             .login-box { grid-template-columns: 1fr; }
         }
 
@@ -498,9 +676,9 @@
             <div class="login-hero">
                 <span class="kicker">ASSESSMENT LOGIN</span>
                 <h1>登录后进入自己的考核项目</h1>
-                <p>请选择角色和账号，输入密码后进入系统。管理员和教务主任进入导入、分发和汇总；考核组长进入自己负责的项目；被考核教师只能查看本人结果。</p>
+                <p>请选择角色和账号，输入密码后进入系统。管理员和教研组长进入导入、分发和汇总；考核组长进入自己负责的项目；被考核教师只能查看本人结果。</p>
                 <div class="grid cols-2">
-                    <div class="card"><h3>管理员 / 教务主任</h3><p>导入人员、分发项目、查看所有汇总。</p></div>
+                    <div class="card"><h3>管理员 / 教研组长</h3><p>导入人员、分发项目、查看所有汇总。</p></div>
                     <div class="card"><h3>考核组长</h3><p>只看到被分配的项目，并逐位教师填报。</p></div>
                     <div class="card"><h3>被考核教师</h3><p>查看自己的各项目分值和说明。</p></div>
                     <div class="card"><h3>默认演示密码</h3><p>现有演示账号默认密码为 123456。</p></div>
@@ -555,7 +733,7 @@
             <div class="hero-card">
                 <span class="kicker">TEACHER ASSESSMENT WORKSPACE</span>
                 <h1>把每位教师的考核项目分发给对应组长填报</h1>
-                <p>管理员和教务主任可以导入教师、导入账号、配置考核项目、把一个或多个项目分配给考核组长。组长只看到自己负责的项目，逐位教师录入分值和说明，提交后自动汇总到管理员视图。</p>
+                <p>全校固定 1 个管理员和 1 个教研组长负责导入、分发和汇总；各年级考核组长只看到自己负责的多选项目，逐位教师录入分值和说明，提交后自动汇总到管理员视图。</p>
                 <div class="hero-actions">
                     <button class="btn btn-primary" type="button" data-tab-jump="admin">进入导入与分发</button>
                     <button class="btn" type="button" data-tab-jump="leader">进入组长填报</button>
@@ -599,7 +777,7 @@
                     </div>
                     <div class="card">
                         <h3>导入系统账号 / 角色 Excel</h3>
-                        <p>用于批量导入管理员、教务主任、考核组长、被考核教师。教务主任权限等同管理员。</p>
+                        <p>用于批量导入管理员、教研组长、考核组长、被考核教师。教研组长权限等同管理员。</p>
                         <div style="height:12px"></div>
                         <input type="file" id="userFile" accept=".xlsx,.xls,.csv">
                     </div>
@@ -677,7 +855,7 @@
                 <div class="panel-head">
                     <div class="panel-title">
                         <span class="icon-box" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
-                        <div><h2>管理员 / 教务主任汇总</h2><p>所有项目最终汇总到这里，自动计算教师成绩考核得分、班级考核得分和对应排名。</p></div>
+                        <div><h2>管理员 / 教研组长汇总</h2><p>所有项目最终汇总到这里，自动计算教师成绩考核得分、班级考核得分和对应排名。</p></div>
                     </div>
                     <div class="actions">
                         <button class="btn" type="button" id="exportSummaryBtn">导出汇总 Excel</button>
@@ -734,15 +912,15 @@
                 <div class="panel-body grid cols-2">
                     <div class="card">
                         <h3>与作业审批系统的对应关系</h3>
-                        <p>作业审批系统的“教师提交、管理员审批、筛选导出、账号批量导入”可迁移为本系统的“组长提交项目分、管理员/教务主任汇总确认、Excel 导出、账号批量导入”。</p>
+                        <p>作业审批系统的“教师提交、管理员审批、筛选导出、账号批量导入”可迁移为本系统的“组长提交项目分、管理员/教研组长汇总确认、Excel 导出、账号批量导入”。</p>
                     </div>
                     <div class="card">
                         <h3>正式接入建议</h3>
-                        <p>建议新增云端表：profiles、teachers、assessment_projects、project_assignments、assessment_scores、operation_logs。教务主任与管理员同级权限，组长只读写分配项目，被考核教师只读本人结果。</p>
+                        <p>建议新增云端表：profiles、teachers、assessment_projects、project_assignments、assessment_scores、operation_logs。教研组长与管理员同级权限，组长只读写分配项目，被考核教师只读本人结果。</p>
                     </div>
                     <div class="card">
                         <h3>Excel 导入列名</h3>
-                        <p>教师表：姓名、年级、学科、角色、账号、密码、任课班级。账号表：姓名、账号、密码、角色。负责项目不放在 Excel 中，由管理员/教务主任在“考核项目分发”中多选。</p>
+                        <p>教师表：姓名、年级、学科、角色、账号、密码、任课班级。账号表：姓名、账号、密码、角色。负责项目不放在 Excel 中，由管理员/教研组长在“考核项目分发”中多选。</p>
                     </div>
                     <div class="card">
                         <h3>本地保存</h3>
@@ -759,13 +937,13 @@
         const STORAGE_KEY = "middle_school_teacher_assessment_v2";
         const ROLE_LABELS = {
             admin: "管理员",
-            dean: "教务主任",
+            dean: "教研组长",
             leader: "考核组长",
             teacher: "被考核教师"
         };
         const ROLE_ALIASES = {
             "管理员": "admin", "admin": "admin",
-            "教务主任": "dean", "主任": "dean", "dean": "dean",
+            "教研组长": "dean", "教务主任": "dean", "主任": "dean", "dean": "dean",
             "考核组长": "leader", "组长": "leader", "leader": "leader",
             "被考核教师": "teacher", "教师": "teacher", "teacher": "teacher"
         };
@@ -810,9 +988,10 @@
 
         function defaultGradeLeaders() {
             const gradeCodes = { "六年级": "g6", "七年级": "g7", "八年级": "g8", "九年级": "g9" };
+            const gradeNames = { "六年级": "6年级", "七年级": "7年级", "八年级": "8年级", "九年级": "9年级" };
             return ASSESSMENT_GRADES.flatMap((grade) => [1, 2, 3, 4].map((index) => ({
                 id: `u_leader_${gradeCodes[grade]}_${index}`,
-                name: `${grade}考核组长${index}`,
+                name: `${gradeNames[grade]}考核组长${index}`,
                 username: `${gradeCodes[grade]}_leader_${index}`,
                 password: "123456",
                 role: "leader",
@@ -823,10 +1002,42 @@
 
         function defaultAssignments() {
             const assignments = {};
+            const gradeCodes = { "六年级": "g6", "七年级": "g7", "八年级": "g8", "九年级": "g9" };
+            const plan = {
+                "六年级": [
+                    ["teacher_two_rates_one_score", "class_term_score_non_grad"],
+                    ["teacher_class_collaboration", "class_top_students_non_grad"],
+                    ["teacher_subject_collaboration", "class_average_non_grad"],
+                    ["teacher_bottom_third", "teacher_excellent_contribution", "teacher_workload", "class_target_non_grad", "class_bottom_third_non_grad"]
+                ],
+                "七年级": [
+                    ["teacher_two_rates_one_score", "teacher_subject_collaboration"],
+                    ["teacher_class_collaboration", "class_term_score_non_grad", "class_average_non_grad"],
+                    ["teacher_bottom_third", "class_bottom_third_non_grad"],
+                    ["teacher_excellent_contribution", "teacher_workload", "class_top_students_non_grad", "class_target_non_grad"]
+                ],
+                "八年级": [
+                    ["teacher_two_rates_one_score", "class_term_score_non_grad", "class_target_non_grad"],
+                    ["teacher_class_collaboration", "class_top_students_non_grad"],
+                    ["teacher_subject_collaboration", "class_average_non_grad"],
+                    ["teacher_bottom_third", "teacher_excellent_contribution", "teacher_workload", "class_bottom_third_non_grad"]
+                ],
+                "九年级": [
+                    ["teacher_two_rates_one_score", "class_two_rates_one_score_grad"],
+                    ["teacher_class_collaboration", "class_target_grad"],
+                    ["teacher_subject_collaboration", "teacher_bottom_third", "class_bottom_third_grad"],
+                    ["teacher_excellent_contribution", "teacher_workload", "class_high_school_contribution_grad", "class_high_score_grad"]
+                ]
+            };
             ASSESSMENT_GRADES.forEach((grade) => {
-                const code = { "六年级": "g6", "七年级": "g7", "八年级": "g8", "九年级": "g9" }[grade];
-                applicableProjectsForGrade(grade).forEach((project, index) => {
-                    assignments[assignmentKey(grade, project.id)] = `u_leader_${code}_${(index % 4) + 1}`;
+                const code = gradeCodes[grade];
+                plan[grade].forEach((projectIds, leaderIndex) => {
+                    projectIds.forEach((projectId) => {
+                        const project = PROJECTS.find((item) => item.id === projectId);
+                        if (project && projectAppliesToGrade(project, grade)) {
+                            assignments[assignmentKey(grade, project.id)] = `u_leader_${code}_${leaderIndex + 1}`;
+                        }
+                    });
                 });
             });
             return assignments;
@@ -835,7 +1046,7 @@
         function defaultState() {
             const users = [
                 { id: "u_admin", name: "系统管理员", username: "admin", password: "123456", role: "admin", grade: "", subject: "" },
-                { id: "u_dean", name: "教务主任", username: "dean", password: "123456", role: "dean", grade: "", subject: "" },
+                { id: "u_dean", name: "教研组长", username: "research_leader", password: "123456", role: "dean", grade: "", subject: "" },
                 ...defaultGradeLeaders(),
                 { id: "u_t1", name: "张老师", username: "zhang", password: "123456", role: "teacher", grade: "六年级", subject: "语文", classes: "1班、2班" },
                 { id: "u_t2", name: "李老师", username: "li", password: "123456", role: "teacher", grade: "八年级", subject: "数学", classes: "1班、2班" },
@@ -875,6 +1086,18 @@
             });
             next.users.forEach((user) => {
                 if (!user.password) user.password = "123456";
+                const defaultUser = defaults.users.find((item) => item.id === user.id);
+                if (defaultUser && /^u_leader_g[6789]_[1-4]$/.test(user.id)) {
+                    user.name = defaultUser.name;
+                    user.username = defaultUser.username;
+                    user.grade = defaultUser.grade;
+                    user.role = "leader";
+                }
+                if (user.id === "u_dean" || user.role === "dean") {
+                    user.role = "dean";
+                    if (user.name === "教务主任" || !user.name) user.name = "教研组长";
+                    if (user.id === "u_dean" && (user.username === "dean" || !user.username)) user.username = "research_leader";
+                }
             });
             next.teachers = Array.isArray(next.teachers) ? next.teachers : [];
             const rawAssignments = next.assignments || {};
@@ -1110,13 +1333,16 @@
                         <div class="check-list">${projectChecks}</div>
                     </article>`;
                 }).join("");
-                return `<section class="card">
-                    <div class="project-top">
-                        <div><h3>${grade}项目分发</h3><p class="hint">${gradeStage(grade)}：每个年级默认 4 个考核组长，可为每位组长多选负责项目。</p></div>
-                        <span class="badge ${gradeStageColor(gradeStage(grade))}">${projects.length} 项</span>
+                return `<details class="grade-assignment" open>
+                    <summary>
+                        <span>${grade}项目分发</span>
+                        <span class="badge ${gradeStageColor(gradeStage(grade))}">${gradeStage(grade)} · ${projects.length} 项</span>
+                    </summary>
+                    <div class="grade-assignment-body">
+                        <div class="hint" style="margin-bottom:12px;">每个年级 4 个考核组长；本年级默认分配与其他年级不同，可继续多选调整。全校只有 1 个管理员和 1 个教研组长负责统筹。</div>
+                        <div class="project-list">${leaderCards || `<p class="hint">暂无该年级考核组长，请先导入或新增。</p>`}</div>
                     </div>
-                    <div class="project-list">${leaderCards || `<p class="hint">暂无该年级考核组长，请先导入或新增。</p>`}</div>
-                </section>`;
+                </details>`;
             }).join("");
             $("projectAssignmentList").innerHTML = gradeSections;
         }
@@ -1150,7 +1376,7 @@
             const project = entry?.project;
             const user = currentUser();
             if (!project || !isLeader(user)) {
-                $("leaderProjectInfo").innerHTML = `<h3>暂无可填报项目</h3><p>请联系管理员或教务主任分配考核项目。</p>`;
+                $("leaderProjectInfo").innerHTML = `<h3>暂无可填报项目</h3><p>请联系管理员或教研组长分配考核项目。</p>`;
                 $("scoreEntryTable").innerHTML = "";
                 return;
             }
@@ -1450,7 +1676,7 @@
         function downloadUserTemplate() {
             exportWorkbook("系统账号角色导入模板.xlsx", [{ name: "账号角色", rows: [
                 { 姓名: "系统管理员", 账号: "admin", 密码: "123456", 角色: "管理员", 年级: "", 学科: "" },
-                { 姓名: "教务主任", 账号: "dean", 密码: "123456", 角色: "教务主任", 年级: "", 学科: "" },
+                { 姓名: "教研组长", 账号: "research_leader", 密码: "123456", 角色: "教研组长", 年级: "", 学科: "" },
                 { 姓名: "6年级考核组长1", 账号: "g6_leader_1", 密码: "123456", 角色: "考核组长", 年级: "六年级", 学科: "" },
                 { 姓名: "6年级考核组长2", 账号: "g6_leader_2", 密码: "123456", 角色: "考核组长", 年级: "六年级", 学科: "" },
                 { 姓名: "9年级考核组长1", 账号: "g9_leader_1", 密码: "123456", 角色: "考核组长", 年级: "九年级", 学科: "" }
