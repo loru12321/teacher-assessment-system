@@ -213,7 +213,7 @@
                     try {
                         const { data: { session }, error } = await sbClient.auth.getSession();
                         if (session && !error) {
-                            window.location.href = 'index.html';
+                            window.location.href = 'app.html';
                         }
                     } catch (e) {
                         console.error('Session validation error:', e);
@@ -241,7 +241,7 @@
 
                         if (error) throw error;
 
-                        window.location.href = 'index.html';
+                        window.location.href = 'app.html';
                     } catch (e) {
                         alert('登录失败: ' + e.message);
                     } finally {

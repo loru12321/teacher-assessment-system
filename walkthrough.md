@@ -14,7 +14,7 @@ https://github.com/loru12321/teacher-assessment-system
 The current app entry is:
 
 ```text
-教学质量评价方案.html -> sign-in.html -> index.html
+index.html -> sign-in.html -> app.html
 ```
 
 ## 2. Supabase Project
@@ -25,7 +25,7 @@ Project URL:
 https://qfhkicgfhetcgcvupsxu.supabase.co
 ```
 
-The browser app uses this publishable key in `sign-in.html` and `index.html`:
+The browser app uses this publishable key in `sign-in.html` and `app.html`:
 
 ```text
 sb_publishable_a2e5g0OkKOPmZbollq1iOA_mSOZxDzc

@@ -12,8 +12,9 @@ assessment are calculated as parallel totals with separate rankings.
 ## Files
 
 - `教学质量评价方案.html` - redirect entry
+- `index.html` - GitHub Pages entry that opens the login portal
 - `sign-in.html` - login and default account initialization portal
-- `index.html` - main Vue 3 + Tailwind + Supabase assessment app
+- `app.html` - main Vue 3 + Tailwind + Supabase assessment app
 - `supabase/migrations/20260630000000_init_schema.sql` - Supabase schema and RPC setup
 - `walkthrough.md` - setup and testing walkthrough
 - `assets/xlsx.full.min.js` - local Excel import/export library
