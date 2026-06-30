@@ -193,7 +193,7 @@
                         <span>系统首页</span>
                     </button>
 
-                    <button v-if="isAdminLike" @click="activeTab = 'admin'" 
+                    <button v-if="isAdminLike" @click="openWorkspace('admin', 'imports')"
                             :class="activeTab === 'admin' ? 'bg-china-red text-white shadow-md shadow-red-100' : 'text-slate-warm hover:bg-gray-50 hover:text-ink'"
                             class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm">
                         <i class="ti ti-git-branch text-lg"></i>
@@ -207,21 +207,21 @@
                         <span>组长填报</span>
                     </button>
                     
-                    <button v-if="isAdminLike" @click="activeTab = 'summary'" 
+                    <button v-if="isAdminLike" @click="openWorkspace('summary', 'board')"
                             :class="activeTab === 'summary' ? 'bg-china-red text-white shadow-md shadow-red-100' : 'text-slate-warm hover:bg-gray-50 hover:text-ink'"
                             class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm">
                         <i class="ti ti-report text-lg"></i>
                         <span>管理员汇总</span>
                     </button>
                     
-                    <button v-if="currentUser?.role === 'teacher' || isAdminLike" @click="activeTab = 'teacher'" 
+                    <button v-if="currentUser?.role === 'teacher' || isAdminLike" @click="openWorkspace('teacher', 'overview')"
                             :class="activeTab === 'teacher' ? 'bg-china-red text-white shadow-md shadow-red-100' : 'text-slate-warm hover:bg-gray-50 hover:text-ink'"
                             class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm">
                         <i class="ti ti-user text-lg"></i>
                         <span>教师个人端</span>
                     </button>
                     
-                    <button @click="activeTab = 'settings'" 
+                    <button @click="openWorkspace('settings', 'status')"
                             :class="activeTab === 'settings' ? 'bg-china-red text-white shadow-md shadow-red-100' : 'text-slate-warm hover:bg-gray-50 hover:text-ink'"
                             class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm">
                         <i class="ti ti-settings text-lg"></i>
@@ -299,10 +299,10 @@
                                 </p>
                             </div>
                             <div class="grid grid-cols-2 gap-3 shrink-0">
-                                <button @click="activeTab = 'admin'" class="px-4 py-3 rounded-xl bg-china-red text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md shadow-red-100">
+                                <button @click="openWorkspace('admin', 'imports')" class="px-4 py-3 rounded-xl bg-china-red text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md shadow-red-100">
                                     <i class="ti ti-upload"></i>导入/分发
                                 </button>
-                                <button @click="activeTab = 'summary'" class="px-4 py-3 rounded-xl bg-ink text-white text-xs font-extrabold flex items-center justify-center gap-2">
+                                <button @click="openWorkspace('summary', 'board')" class="px-4 py-3 rounded-xl bg-ink text-white text-xs font-extrabold flex items-center justify-center gap-2">
                                     <i class="ti ti-chart-bar"></i>查看汇总
                                 </button>
                             </div>
@@ -318,7 +318,7 @@
                                 </div>
                             </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <button v-for="item in functionCards" :key="item.tab + item.title" @click="activeTab = item.tab"
+                                <button v-for="item in functionCards" :key="item.tab + item.title" @click="openWorkspace(item.tab, item.subTab)"
                                         class="text-left rounded-2xl border border-[#D6CAB2] bg-gray-50/40 hover:bg-white hover:border-china-red/40 p-5 transition-all">
                                     <span class="w-11 h-11 rounded-xl flex items-center justify-center text-xl mb-4" :class="item.iconClass">
                                         <i :class="item.icon"></i>
@@ -1258,8 +1258,8 @@
                                 <p class="text-xs text-slate-warm mt-1">这里集中查看当前系统的角色、年级、项目、导入模板和运行规则。</p>
                             </div>
                             <div class="flex flex-wrap gap-2">
-                                <button @click="activeTab = 'admin'" class="px-4 py-2 rounded-xl bg-china-red text-white text-xs font-bold"><i class="ti ti-users mr-1"></i>人员与分发</button>
-                                <button @click="activeTab = 'summary'" class="px-4 py-2 rounded-xl bg-ink text-white text-xs font-bold"><i class="ti ti-report mr-1"></i>汇总排名</button>
+                                <button @click="openWorkspace('admin', 'people')" class="px-4 py-2 rounded-xl bg-china-red text-white text-xs font-bold"><i class="ti ti-users mr-1"></i>人员与分发</button>
+                                <button @click="openWorkspace('summary', 'board')" class="px-4 py-2 rounded-xl bg-ink text-white text-xs font-bold"><i class="ti ti-report mr-1"></i>汇总排名</button>
                             </div>
                         </div>
                         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
@@ -1473,6 +1473,14 @@
                 const retryLoad = () => {
                     dbError.value = '';
                     checkSession();
+                };
+
+                const openWorkspace = (tab, subTab = '') => {
+                    activeTab.value = tab;
+                    if (tab === 'admin' && subTab) adminSubTab.value = subTab;
+                    if (tab === 'summary' && subTab) summarySubTab.value = subTab;
+                    if (tab === 'teacher' && subTab) teacherSubTab.value = subTab;
+                    if (tab === 'settings' && subTab) settingsSubTab.value = subTab;
                 };
 
                 // Check authorization and fetch initial data
@@ -1711,12 +1719,13 @@
                 });
 
                 const functionCards = [
-                    { tab: "admin", title: "教师与角色导入", icon: "ti ti-file-import", iconClass: "bg-blue-50 text-blue-600", desc: "导入教师年级学科、任课班级；导入管理员、教务主任、考核组长和教师账号，模板默认每年级 4 名组长。" },
-                    { tab: "admin", title: "考核项目分发", icon: "ti ti-git-branch", iconClass: "bg-china-red/10 text-china-red", desc: "按 6-9 年级为不同考核组长分配不同项目，负责项目不出现在 Excel 导入表中。" },
-                    { tab: "leader", title: "组长项目填报", icon: "ti ti-edit", iconClass: "bg-green-50 text-green-700", desc: "考核组长进入后只看到自己负责的项目，对所有适用教师录入分值和说明。" },
-                    { tab: "summary", title: "汇总与排名", icon: "ti ti-chart-bar", iconClass: "bg-amber-50 text-amber-700", desc: "管理员和教务主任查看教师成绩考核得分、班级考核得分、自动总分和排名。" },
-                    { tab: "teacher", title: "教师个人端", icon: "ti ti-user-check", iconClass: "bg-purple-50 text-purple-600", desc: "被考核教师查看个人各项目得分、缺项、说明、教师成绩排名和班级考核排名。" },
-                    { tab: "settings", title: "方案与系统管理", icon: "ti ti-settings", iconClass: "bg-gray-100 text-ink", desc: "集中展示分值结构、公式口径、账号规则、毕业/非毕业年级规则和系统说明。" }
+                    { tab: "admin", subTab: "imports", title: "教师与角色导入", icon: "ti ti-file-import", iconClass: "bg-blue-50 text-blue-600", desc: "导入教师年级学科、任课班级；导入管理员、教务主任、考核组长和教师账号，模板默认每年级 4 名组长。" },
+                    { tab: "admin", subTab: "assignments", title: "考核项目分发", icon: "ti ti-git-branch", iconClass: "bg-china-red/10 text-china-red", desc: "按 6-9 年级为不同考核组长分配不同项目，负责项目不出现在 Excel 导入表中。" },
+                    { tab: "admin", subTab: "people", title: "人员账号权限", icon: "ti ti-user-cog", iconClass: "bg-blue-50 text-blue-600", desc: "搜索、查看和修改账号、密码、身份、年级、学科、班级和权限。" },
+                    { tab: "leader", subTab: "", title: "组长项目填报", icon: "ti ti-edit", iconClass: "bg-green-50 text-green-700", desc: "考核组长进入后只看到自己负责的项目，对所有适用教师录入分值和说明。" },
+                    { tab: "summary", subTab: "board", title: "汇总与排名", icon: "ti ti-chart-bar", iconClass: "bg-amber-50 text-amber-700", desc: "管理员和教务主任查看教师成绩考核得分、班级考核得分、自动总分和排名。" },
+                    { tab: "teacher", subTab: "overview", title: "教师个人端", icon: "ti ti-user-check", iconClass: "bg-purple-50 text-purple-600", desc: "被考核教师查看个人各项目得分、缺项、说明、教师成绩排名和班级考核排名。" },
+                    { tab: "settings", subTab: "status", title: "方案与系统管理", icon: "ti ti-settings", iconClass: "bg-gray-100 text-ink", desc: "集中展示分值结构、公式口径、账号规则、毕业/非毕业年级规则和系统说明。" }
                 ];
 
                 const adminSubModules = [
@@ -2510,6 +2519,7 @@
                     currentUser,
                     dbError,
                     retryLoad,
+                    openWorkspace,
                     isAdminLike,
                     isLeader,
                     users,
