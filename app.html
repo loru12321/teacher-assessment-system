@@ -483,6 +483,22 @@
                                 <p class="text-xs text-slate-warm leading-relaxed mb-6">
                                     批量导入全校管理员、教研组长、考核组长。模板默认每个年级 4 名考核组长；实际上传几名，系统就按几名参与项目分发。
                                 </p>
+                                <div class="mb-5 rounded-xl border border-[#D6CAB2] bg-gray-50/70 p-3">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <span class="text-xs font-extrabold text-ink flex items-center gap-1.5">
+                                            <i class="ti ti-users-plus text-china-red"></i>每年级默认组长数
+                                        </span>
+                                        <div class="flex items-center gap-2">
+                                            <button v-for="count in [2,3,4,5,6]" :key="count" @click="defaultLeaderCount = count"
+                                                    class="w-8 h-8 rounded-lg text-xs font-extrabold border transition-all"
+                                                    :class="defaultLeaderCount === count ? 'bg-china-red text-white border-china-red' : 'bg-white text-slate-warm border-[#D6CAB2] hover:text-china-red'">
+                                                {{ count }}
+                                            </button>
+                                            <input v-model.number="defaultLeaderCount" type="number" min="1" max="12" class="input-chinese w-16 h-8 rounded-lg text-center text-xs font-bold">
+                                        </div>
+                                    </div>
+                                    <p class="text-[11px] text-slate-warm mt-2">只影响下载的账号模板；系统实际人数仍以你上传的 Excel 行数为准。</p>
+                                </div>
                             </div>
                             <label class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#D6CAB2] bg-gray-50/50 hover:bg-[#F2ECE0]/30 cursor-pointer transition-all font-bold text-sm">
                                 <i class="ti ti-upload"></i>
@@ -511,20 +527,41 @@
                             </div>
                         </div>
 
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+                            <div v-for="grade in grades" :key="grade + '-assign-stat'" class="rounded-xl border border-[#D6CAB2] bg-white/80 p-4">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-extrabold text-ink">{{ grade }}</span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                                          :class="assignmentProgress(grade).missing === 0 ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'">
+                                        {{ assignmentProgress(grade).done }}/{{ assignmentProgress(grade).total }}
+                                    </span>
+                                </div>
+                                <div class="mt-3 h-2 rounded-full bg-gray-100 overflow-hidden">
+                                    <div class="h-full rounded-full bg-china-red transition-all" :style="{ width: assignmentProgress(grade).percent + '%' }"></div>
+                                </div>
+                                <p class="text-[11px] text-slate-warm mt-2">
+                                    {{ getGradeLeaders(grade).length }} 名组长，{{ assignmentProgress(grade).missing }} 项未分配
+                                </p>
+                            </div>
+                        </div>
+
                         <!-- Accordion Grades -->
                         <div class="space-y-4">
                             <div v-for="grade in grades" :key="grade" class="border border-[#D6CAB2] rounded-2xl overflow-hidden bg-gray-50/30">
-                                <div class="bg-white/80 border-b border-[#D6CAB2] px-6 py-4 flex items-center justify-between">
+                                <button @click="toggleGradePanel(grade)" class="w-full bg-white/80 border-b border-[#D6CAB2] px-6 py-4 flex items-center justify-between text-left">
                                     <div class="flex items-center gap-3">
+                                        <i class="ti text-china-red" :class="openedGradePanels[grade] ? 'ti-chevron-down' : 'ti-chevron-right'"></i>
                                         <span class="text-base font-extrabold font-serif">{{ grade }}</span>
                                         <span class="px-2 py-0.5 rounded-full text-xs font-bold"
                                               :class="gradeStage(grade) === '毕业年级' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'">
                                             {{ gradeStage(grade) }}
                                         </span>
                                     </div>
-                                    <span class="text-xs text-slate-warm font-semibold">该年级适用项目 {{ getGradeProjectsCount(grade) }} 个</span>
-                                </div>
-                                <div class="p-6">
+                                    <span class="text-xs text-slate-warm font-semibold">
+                                        {{ getGradeLeaders(grade).length }} 名组长 · 未分配 {{ assignmentProgress(grade).missing }} 项
+                                    </span>
+                                </button>
+                                <div v-show="openedGradePanels[grade]" class="p-6">
                                     <!-- Table for project assignments -->
                                     <div class="overflow-x-auto">
                                         <table class="w-full text-left text-xs border-collapse">
@@ -1127,6 +1164,13 @@
                 
                 // Admin assignment state
                 const tempAssignments = ref({});
+                const defaultLeaderCount = ref(4);
+                const openedGradePanels = ref({
+                    "六年级": true,
+                    "七年级": true,
+                    "八年级": true,
+                    "九年级": true
+                });
                 
                 // Leader scoring state
                 const leaderProjectId = ref('');
@@ -1418,6 +1462,22 @@
                     return getGradeProjects(grade).length;
                 };
 
+                const assignmentProgress = (grade) => {
+                    const projects = getGradeProjects(grade);
+                    const done = projects.filter(project => tempAssignments.value[grade + '::' + project.id]).length;
+                    const total = projects.length;
+                    return {
+                        done,
+                        total,
+                        missing: Math.max(total - done, 0),
+                        percent: total ? Math.round((done / total) * 100) : 0
+                    };
+                };
+
+                const toggleGradePanel = (grade) => {
+                    openedGradePanels.value[grade] = !openedGradePanels.value[grade];
+                };
+
                 // Leaders residing in specific grades
                 const getGradeLeaders = (grade) => {
                     const normalized = normalizeGrade(grade);
@@ -1620,13 +1680,32 @@
                     setLoading(true, '正在保存项目分发...');
                     try {
                         const payload = [];
-                        for (const [key, leaderId] of Object.entries(tempAssignments.value)) {
-                            const [grade, projectId] = key.split('::');
-                            payload.push({
-                                grade,
-                                project_id: projectId,
-                                leader_id: leaderId || null
+                        grades.forEach(grade => {
+                            getGradeProjects(grade).forEach(project => {
+                                const key = grade + '::' + project.id;
+                                let leaderId = tempAssignments.value[key] || null;
+                                const validLeaderIds = getGradeLeaders(grade).map(leader => leader.id);
+                                if (leaderId && !validLeaderIds.includes(leaderId)) leaderId = null;
+
+                                payload.push({
+                                    grade,
+                                    project_id: project.id,
+                                    leader_id: leaderId
+                                });
                             });
+                        });
+
+                        if (payload.length === 0) {
+                            throw new Error('没有可保存的项目分发记录，请先导入考核组长并生成分发。');
+                        }
+
+                        const missing = grades
+                            .map(grade => ({ grade, ...assignmentProgress(grade) }))
+                            .filter(item => item.missing > 0);
+                        if (missing.length > 0) {
+                            const text = missing.map(item => `${item.grade}${item.missing}项`).join('、');
+                            const ok = confirm(`仍有未分配项目：${text}。未分配项目将由管理员/教研组长兜底填报，确认继续保存吗？`);
+                            if (!ok) return;
                         }
                         
                         const { error } = await sbClient
@@ -1804,6 +1883,7 @@
                 };
 
                 const downloadUserTemplate = () => {
+                    const leaderCount = Math.max(1, Math.min(12, Number(defaultLeaderCount.value) || 4));
                     const rows = [
                         { "姓名": "系统管理员", "账号": "admin", "密码": "123456", "角色": "管理员", "年级": "", "学科": "" },
                         { "姓名": "教研组长", "账号": "research_leader", "密码": "123456", "角色": "教研组长", "年级": "", "学科": "" },
@@ -1815,7 +1895,7 @@
                         ["九年级", "g9"]
                     ];
                     gradeSeeds.forEach(([grade, prefix]) => {
-                        for (let i = 1; i <= 4; i++) {
+                        for (let i = 1; i <= leaderCount; i++) {
                             rows.push({
                                 "姓名": `${grade}考核组长${i}`,
                                 "账号": `${prefix}_leader_${i}`,
@@ -1826,7 +1906,7 @@
                             });
                         }
                     });
-                    exportWorkbook("系统账号角色导入模板_默认每年级4名组长.xlsx", [{ name: "账号导入", rows }]);
+                    exportWorkbook(`系统账号角色导入模板_每年级${leaderCount}名组长.xlsx`, [{ name: "账号导入", rows }]);
                 };
 
                 const exportWorkbook = (filename, sheets) => {
@@ -1918,6 +1998,8 @@
                     gradeTeacherCounts,
                     gradeLeaderCounts,
                     gradeAssignmentCounts,
+                    defaultLeaderCount,
+                    openedGradePanels,
                     roleMatrix,
                     functionCards,
                     
@@ -1948,6 +2030,8 @@
                     projectAppliesToGrade,
                     getGradeProjects,
                     getGradeProjectsCount,
+                    assignmentProgress,
+                    toggleGradePanel,
                     getGradeLeaders,
                     projectGroupLabel,
                     assignedProjectEntries,
