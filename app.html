@@ -186,6 +186,13 @@
 
                 <!-- Navigation Tabs -->
                 <nav class="flex-grow p-4 space-y-1.5 overflow-y-auto">
+                    <button v-if="isAdminLike" @click="activeTab = 'overview'"
+                            :class="activeTab === 'overview' ? 'bg-china-red text-white shadow-md shadow-red-100' : 'text-slate-warm hover:bg-gray-50 hover:text-ink'"
+                            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm">
+                        <i class="ti ti-layout-dashboard text-lg"></i>
+                        <span>系统首页</span>
+                    </button>
+
                     <button v-if="isAdminLike" @click="activeTab = 'admin'" 
                             :class="activeTab === 'admin' ? 'bg-china-red text-white shadow-md shadow-red-100' : 'text-slate-warm hover:bg-gray-50 hover:text-ink'"
                             class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm">
@@ -217,8 +224,8 @@
                     <button @click="activeTab = 'settings'" 
                             :class="activeTab === 'settings' ? 'bg-china-red text-white shadow-md shadow-red-100' : 'text-slate-warm hover:bg-gray-50 hover:text-ink'"
                             class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm">
-                        <i class="ti ti-file-text text-lg"></i>
-                        <span>实施说明</span>
+                        <i class="ti ti-settings text-lg"></i>
+                        <span>系统管理与方案</span>
                     </button>
                 </nav>
 
@@ -278,6 +285,169 @@
                 </section>
 
                 <!-- Panel Views -->
+
+                <!-- VIEW 0: ADMIN OVERVIEW - FUNCTION MAP & SYSTEM SETUP -->
+                <div v-if="activeTab === 'overview' && isAdminLike" class="space-y-6">
+                    <div class="premium-card p-6 overflow-hidden relative">
+                        <div class="absolute right-0 top-0 w-48 h-48 bg-china-red/5 rounded-bl-[80px] pointer-events-none"></div>
+                        <div class="relative flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+                            <div>
+                                <p class="text-xs font-black tracking-[0.24em] text-china-red uppercase mb-2">System Workspace</p>
+                                <h2 class="text-2xl lg:text-3xl font-black font-serif text-ink leading-tight">教师教学质量考核工作台</h2>
+                                <p class="text-sm text-slate-warm mt-3 max-w-3xl leading-relaxed">
+                                    系统围绕“教师成绩考核”和“班级考核”两条平行主线运行。管理员和教研组长负责导入人员、配置角色、分发项目、查看汇总；考核组长只填报分配给自己的项目；被考核教师只查看个人结果。
+                                </p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 shrink-0">
+                                <button @click="activeTab = 'admin'" class="px-4 py-3 rounded-xl bg-china-red text-white text-xs font-extrabold flex items-center justify-center gap-2 shadow-md shadow-red-100">
+                                    <i class="ti ti-upload"></i>导入/分发
+                                </button>
+                                <button @click="activeTab = 'summary'" class="px-4 py-3 rounded-xl bg-ink text-white text-xs font-extrabold flex items-center justify-center gap-2">
+                                    <i class="ti ti-chart-bar"></i>查看汇总
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="xl:col-span-2 premium-card p-6">
+                            <div class="flex items-center justify-between gap-4 mb-5">
+                                <div>
+                                    <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-apps text-china-red text-xl"></i>各项功能入口</h3>
+                                    <p class="text-xs text-slate-warm mt-1">按实际业务流程组织，进入后即可操作对应模块。</p>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <button v-for="item in functionCards" :key="item.tab + item.title" @click="activeTab = item.tab"
+                                        class="text-left rounded-2xl border border-[#D6CAB2] bg-gray-50/40 hover:bg-white hover:border-china-red/40 p-5 transition-all">
+                                    <span class="w-11 h-11 rounded-xl flex items-center justify-center text-xl mb-4" :class="item.iconClass">
+                                        <i :class="item.icon"></i>
+                                    </span>
+                                    <div class="flex items-center justify-between gap-3">
+                                        <h4 class="text-sm font-extrabold text-ink">{{ item.title }}</h4>
+                                        <i class="ti ti-arrow-right text-slate-warm"></i>
+                                    </div>
+                                    <p class="text-xs text-slate-warm leading-relaxed mt-2">{{ item.desc }}</p>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="premium-card p-6">
+                            <h3 class="text-lg font-extrabold flex items-center gap-2 mb-5"><i class="ti ti-shield-check text-china-red text-xl"></i>角色与权限</h3>
+                            <div class="space-y-3">
+                                <div v-for="role in roleMatrix" :key="role.key" class="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                                    <div class="flex items-center justify-between gap-3 mb-2">
+                                        <span class="text-sm font-extrabold text-ink">{{ role.name }}</span>
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="role.badge">{{ roleCounts[role.key] || 0 }} 人</span>
+                                    </div>
+                                    <p class="text-xs text-slate-warm leading-relaxed">{{ role.desc }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <div class="premium-card p-6">
+                            <div class="flex items-center justify-between gap-4 mb-5">
+                                <div>
+                                    <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-list-check text-china-red text-xl"></i>教师成绩考核项目及分值</h3>
+                                    <p class="text-xs text-slate-warm mt-1">教师个人成绩考核总分 {{ teacherProjectTotal }} 分，组长按项目逐项填报。</p>
+                                </div>
+                                <span class="px-3 py-1 rounded-full bg-china-red text-white text-xs font-black">{{ teacherProjectTotal }} 分</span>
+                            </div>
+                            <div class="space-y-3">
+                                <div v-for="p in teacherProjects" :key="p.id" class="rounded-xl border border-gray-100 p-4">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <h4 class="text-sm font-extrabold text-ink">{{ p.name }}</h4>
+                                        <span class="text-sm font-black text-china-red">{{ p.max }} 分</span>
+                                    </div>
+                                    <p class="text-xs text-slate-warm leading-relaxed mt-1">{{ p.desc }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="premium-card p-6">
+                            <div class="flex items-center justify-between gap-4 mb-5">
+                                <div>
+                                    <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-building-community text-china-red text-xl"></i>班级考核项目及分值</h3>
+                                    <p class="text-xs text-slate-warm mt-1">班级考核与教师成绩考核平行计算，毕业/非毕业年级分别按 100 分配置。</p>
+                                </div>
+                            </div>
+                            <div class="space-y-5">
+                                <div v-for="stage in classProjectStages" :key="stage.name" class="rounded-2xl border border-[#D6CAB2] overflow-hidden">
+                                    <div class="px-4 py-3 bg-gray-50 border-b border-[#D6CAB2] flex items-center justify-between">
+                                        <h4 class="text-sm font-extrabold text-ink">{{ stage.name }}</h4>
+                                        <span class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-black">{{ stage.total }} 分</span>
+                                    </div>
+                                    <div class="divide-y divide-gray-100">
+                                        <div v-for="p in stage.projects" :key="p.id" class="px-4 py-3">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <span class="text-xs font-extrabold text-ink">{{ p.name }}</span>
+                                                <span class="text-xs font-black text-amber-700">{{ p.max }} 分</span>
+                                            </div>
+                                            <p class="text-[11px] text-slate-warm leading-relaxed mt-1">{{ p.desc }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="premium-card p-6 xl:col-span-2">
+                            <h3 class="text-lg font-extrabold flex items-center gap-2 mb-5"><i class="ti ti-users-group text-china-red text-xl"></i>教师及角色设置概览</h3>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                                <div v-for="grade in grades" :key="grade" class="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                                    <p class="text-xs text-slate-warm font-bold">{{ grade }}</p>
+                                    <h4 class="text-xl font-black text-ink mt-1">{{ gradeTeacherCounts[grade] || 0 }} 名教师</h4>
+                                    <p class="text-[11px] text-blue-600 font-bold mt-1">{{ gradeLeaderCounts[grade] || 0 }} 名考核组长</p>
+                                </div>
+                            </div>
+                            <div class="rounded-xl border border-[#D6CAB2] overflow-hidden">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-gray-50 border-b border-[#D6CAB2]">
+                                        <tr>
+                                            <th class="py-3 px-4 font-bold text-slate-warm">年级</th>
+                                            <th class="py-3 px-4 font-bold text-slate-warm">年级类型</th>
+                                            <th class="py-3 px-4 font-bold text-slate-warm text-center">考核组长</th>
+                                            <th class="py-3 px-4 font-bold text-slate-warm text-center">已分发项目</th>
+                                            <th class="py-3 px-4 font-bold text-slate-warm text-center">适用项目</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="grade in grades" :key="grade" class="border-b border-gray-100">
+                                            <td class="py-3 px-4 font-extrabold text-ink">{{ grade }}</td>
+                                            <td class="py-3 px-4">
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="gradeStage(grade) === '毕业年级' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'">{{ gradeStage(grade) }}</span>
+                                            </td>
+                                            <td class="py-3 px-4 text-center font-bold">{{ gradeLeaderCounts[grade] || 0 }}</td>
+                                            <td class="py-3 px-4 text-center font-bold text-china-red">{{ gradeAssignmentCounts[grade] || 0 }}</td>
+                                            <td class="py-3 px-4 text-center font-bold">{{ getGradeProjectsCount(grade) }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="premium-card p-6">
+                            <h3 class="text-lg font-extrabold flex items-center gap-2 mb-5"><i class="ti ti-settings-automation text-china-red text-xl"></i>系统管理</h3>
+                            <div class="space-y-3">
+                                <button @click="downloadTeacherTemplate" class="w-full px-4 py-3 rounded-xl border border-[#D6CAB2] bg-gray-50 hover:bg-white text-left transition-all">
+                                    <span class="text-sm font-extrabold text-ink flex items-center gap-2"><i class="ti ti-download text-china-red"></i>教师导入模板</span>
+                                    <p class="text-xs text-slate-warm mt-1">下载教师年级、学科、任课班级模板。</p>
+                                </button>
+                                <button @click="downloadUserTemplate" class="w-full px-4 py-3 rounded-xl border border-[#D6CAB2] bg-gray-50 hover:bg-white text-left transition-all">
+                                    <span class="text-sm font-extrabold text-ink flex items-center gap-2"><i class="ti ti-id text-china-red"></i>角色账号模板</span>
+                                    <p class="text-xs text-slate-warm mt-1">导入管理员、教研组长、考核组长和教师账号。</p>
+                                </button>
+                                <button @click="activeTab = 'settings'" class="w-full px-4 py-3 rounded-xl border border-[#D6CAB2] bg-gray-50 hover:bg-white text-left transition-all">
+                                    <span class="text-sm font-extrabold text-ink flex items-center gap-2"><i class="ti ti-file-description text-china-red"></i>方案与公式说明</span>
+                                    <p class="text-xs text-slate-warm mt-1">查看教师考核、班级考核和规则说明。</p>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 
                 <!-- VIEW 1: ADMIN - IMPORT & ASSIGNMENT -->
                 <div v-if="activeTab === 'admin' && isAdminLike" class="space-y-6">
@@ -778,36 +948,118 @@
 
                 <!-- VIEW 5: SETTINGS & DOCUMENTATION -->
                 <div v-if="activeTab === 'settings'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="premium-card p-6 lg:col-span-2">
+                        <div class="flex items-center justify-between gap-4 flex-wrap">
+                            <div>
+                                <h3 class="text-lg font-extrabold text-china-red flex items-center gap-2"><i class="ti ti-settings"></i>系统管理状态</h3>
+                                <p class="text-xs text-slate-warm mt-1">这里集中查看当前系统的角色、年级、项目、导入模板和运行规则。</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2">
+                                <button @click="activeTab = 'admin'" class="px-4 py-2 rounded-xl bg-china-red text-white text-xs font-bold"><i class="ti ti-users mr-1"></i>人员与分发</button>
+                                <button @click="activeTab = 'summary'" class="px-4 py-2 rounded-xl bg-ink text-white text-xs font-bold"><i class="ti ti-report mr-1"></i>汇总排名</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-5">
+                            <div class="rounded-xl border border-gray-100 bg-gray-50/60 p-4" v-for="role in roleMatrix" :key="role.key">
+                                <p class="text-xs text-slate-warm font-bold">{{ role.name }}</p>
+                                <h4 class="text-xl font-black text-ink mt-1">{{ roleCounts[role.key] || 0 }} 人</h4>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="premium-card p-6 space-y-4">
                         <h3 class="text-base font-extrabold text-china-red border-b border-gray-100 pb-2 flex items-center gap-1.5"><i class="ti ti-file-text"></i>教师成绩评价办法</h3>
                         <div class="text-xs text-ink leading-relaxed space-y-3">
-                            <p>教师个人考核成绩总分 100 分，由以下六项组成：</p>
-                            <ol class="list-decimal list-inside space-y-2 text-slate-warm font-medium">
-                                <li><strong class="text-ink">两率一分成绩 (54分)</strong>：优秀率 (40%)、及格率 (30%)、平均分 (30%) 综合折算。公式：<code class="bg-gray-100 px-1 py-0.5 rounded font-mono text-china-red">(个人优秀率/最高优秀率*40 + 个人及格率/最高及格率*30 + 个人平均分/最高平均分*30) / 最高教师成绩 * 54</code></li>
-                                <li><strong class="text-ink">优秀率增幅 (6分)</strong>：常规增幅与维持增幅取高者计算。常规增幅为现优秀率与原始优秀率差值。</li>
-                                <li><strong class="text-ink">班级协调组成绩 (10分)</strong>：基于所教班级整体两率一分得分折算。</li>
-                                <li><strong class="text-ink">学科集体协作成绩 (10分)</strong>：同一学科组平均成绩折算。</li>
-                                <li><strong class="text-ink">后 1/3 学生成绩 (15分)</strong>：关注薄弱学生群体转换率。</li>
-                                <li><strong class="text-ink">课时工作量 (5分)</strong>：周课时比重折算，早晚自习按 1.5 倍计算。</li>
-                            </ol>
+                            <p>教师个人考核成绩总分 {{ teacherProjectTotal }} 分，由以下六项组成：</p>
+                            <div class="space-y-2">
+                                <div v-for="project in teacherProjects" :key="project.id" class="rounded-xl border border-gray-100 bg-gray-50/50 p-3">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <strong class="text-ink">{{ project.name }}</strong>
+                                        <span class="text-china-red font-black">{{ project.max }} 分</span>
+                                    </div>
+                                    <p class="text-slate-warm font-medium leading-relaxed mt-1">{{ project.desc }}</p>
+                                </div>
+                            </div>
+                            <p class="text-slate-warm font-medium">
+                                两率一分内部口径：优秀率、及格率、平均分按方案折算；优秀率增幅并入“两率一分”项目展示，最终由考核组长按系统项目录入。
+                            </p>
                         </div>
                     </div>
                     
                     <div class="premium-card p-6 space-y-4">
                         <h3 class="text-base font-extrabold text-china-red border-b border-gray-100 pb-2 flex items-center gap-1.5"><i class="ti ti-file-certificate"></i>班级成绩考核办法 (与教师平行)</h3>
                         <div class="text-xs text-ink leading-relaxed space-y-3">
-                            <p><strong>非毕业年级 (6, 7, 8 年级) 班级考核 (100分)</strong>：</p>
-                            <ul class="list-disc list-inside space-y-1 text-slate-warm font-medium">
-                                <li>期末成绩 (60分)：两率一分 (50分) + 优秀率增幅 (10分)。</li>
-                                <li>优秀学生得分 (10分) / 班级平均分 (10分)</li>
-                                <li>尖子生培育 (15分) / 后 1/3 学生成绩 (5分)</li>
-                            </ul>
-                            <p class="mt-4"><strong>毕业年级 (9 年级) 班级考核 (100分)</strong>：</p>
-                            <ul class="list-disc list-inside space-y-1 text-slate-warm font-medium">
-                                <li>期末成绩 (45分) / 后 1/3 学生成绩 (5分)</li>
-                                <li>指标生完成度 (20分)</li>
-                                <li>高中过线率 (15分) / 高分段贡献 (15分)</li>
-                            </ul>
+                            <div v-for="stage in classProjectStages" :key="stage.name" class="rounded-xl border border-gray-100 bg-gray-50/50 p-3">
+                                <div class="flex items-center justify-between gap-3 mb-2">
+                                    <strong class="text-ink">{{ stage.name }} 班级考核</strong>
+                                    <span class="text-amber-700 font-black">{{ stage.total }} 分</span>
+                                </div>
+                                <ul class="space-y-1 text-slate-warm font-medium">
+                                    <li v-for="project in stage.projects" :key="project.id" class="flex items-start justify-between gap-3">
+                                        <span>{{ project.name }}</span>
+                                        <span class="text-amber-700 font-black shrink-0">{{ project.max }} 分</span>
+                                    </li>
+                                </ul>
+                            </div>
+                            <p class="text-slate-warm font-medium">班级考核与教师成绩考核没有从属关系，管理员和教研组长分别查看两套总分与排名。</p>
+                        </div>
+                    </div>
+
+                    <div class="premium-card p-6 space-y-4">
+                        <h3 class="text-base font-extrabold text-china-red border-b border-gray-100 pb-2 flex items-center gap-1.5"><i class="ti ti-id-badge"></i>角色设置规则</h3>
+                        <div class="space-y-3">
+                            <div v-for="role in roleMatrix" :key="role.key" class="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                                <div class="flex items-center justify-between gap-2 mb-1">
+                                    <span class="text-sm font-extrabold text-ink">{{ role.name }}</span>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="role.badge">{{ roleCounts[role.key] || 0 }} 人</span>
+                                </div>
+                                <p class="text-xs text-slate-warm leading-relaxed">{{ role.desc }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="premium-card p-6 space-y-4">
+                        <h3 class="text-base font-extrabold text-china-red border-b border-gray-100 pb-2 flex items-center gap-1.5"><i class="ti ti-school"></i>年级与项目配置</h3>
+                        <div class="rounded-xl border border-[#D6CAB2] overflow-hidden">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-gray-50 border-b border-[#D6CAB2]">
+                                    <tr>
+                                        <th class="py-3 px-4 font-bold text-slate-warm">年级</th>
+                                        <th class="py-3 px-4 font-bold text-slate-warm">类型</th>
+                                        <th class="py-3 px-4 font-bold text-slate-warm text-center">教师</th>
+                                        <th class="py-3 px-4 font-bold text-slate-warm text-center">组长</th>
+                                        <th class="py-3 px-4 font-bold text-slate-warm text-center">项目</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="grade in grades" :key="grade" class="border-b border-gray-100">
+                                        <td class="py-3 px-4 font-extrabold text-ink">{{ grade }}</td>
+                                        <td class="py-3 px-4 text-slate-warm font-bold">{{ gradeStage(grade) }}</td>
+                                        <td class="py-3 px-4 text-center font-bold">{{ gradeTeacherCounts[grade] || 0 }}</td>
+                                        <td class="py-3 px-4 text-center font-bold">{{ gradeLeaderCounts[grade] || 0 }}</td>
+                                        <td class="py-3 px-4 text-center font-bold text-china-red">{{ getGradeProjectsCount(grade) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="text-xs text-slate-warm leading-relaxed">毕业年级固定为九年级；非毕业年级为六、七、八年级。不同年级的项目可分配给不同考核组长。</p>
+                    </div>
+
+                    <div class="premium-card p-6 space-y-4">
+                        <h3 class="text-base font-extrabold text-china-red border-b border-gray-100 pb-2 flex items-center gap-1.5"><i class="ti ti-tool"></i>管理操作</h3>
+                        <div class="grid grid-cols-1 gap-3">
+                            <button @click="downloadTeacherTemplate" class="px-4 py-3 rounded-xl border border-[#D6CAB2] bg-gray-50 hover:bg-white text-left">
+                                <span class="text-sm font-extrabold text-ink"><i class="ti ti-download text-china-red mr-1"></i>下载教师导入模板</span>
+                                <p class="text-xs text-slate-warm mt-1">用于导入被考核教师、年级、学科和任教班级。</p>
+                            </button>
+                            <button @click="downloadUserTemplate" class="px-4 py-3 rounded-xl border border-[#D6CAB2] bg-gray-50 hover:bg-white text-left">
+                                <span class="text-sm font-extrabold text-ink"><i class="ti ti-download text-china-red mr-1"></i>下载角色账号模板</span>
+                                <p class="text-xs text-slate-warm mt-1">用于导入管理员、教研组长、考核组长和教师账号。</p>
+                            </button>
+                            <button @click="handleLogout" class="px-4 py-3 rounded-xl border border-red-200 bg-red-50 hover:bg-white text-left">
+                                <span class="text-sm font-extrabold text-red-600"><i class="ti ti-logout mr-1"></i>退出系统</span>
+                                <p class="text-xs text-red-400 mt-1">清除当前登录会话，返回登录页。</p>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -851,7 +1103,7 @@
                 const isLoading = ref(false);
                 const loadingText = ref('');
                 const loadingProgress = ref(0);
-                const activeTab = ref('admin');
+                const activeTab = ref('overview');
                 const currentUser = ref(null);
                 const dbError = ref('');
                 
@@ -925,7 +1177,7 @@
                         
                         // Set default tab based on role
                         if (profile.role === 'admin' || profile.role === 'dean') {
-                            activeTab.value = 'admin';
+                            activeTab.value = 'overview';
                         } else if (profile.role === 'leader') {
                             activeTab.value = 'leader';
                         } else {
@@ -1032,6 +1284,16 @@
                     return '缺项';
                 };
 
+                const normalizeGrade = (grade) => {
+                    const text = String(grade || "").trim();
+                    if (!text) return "";
+                    if (/[6六]/.test(text)) return "六年级";
+                    if (/[7七]/.test(text)) return "七年级";
+                    if (/[8八]/.test(text)) return "八年级";
+                    if (/[9九]/.test(text)) return "九年级";
+                    return text;
+                };
+
                 // Computed variables
                 const isAdminLike = computed(() => {
                     return currentUser.value && (currentUser.value.role === 'admin' || currentUser.value.role === 'dean');
@@ -1044,6 +1306,70 @@
                 const teachers = computed(() => {
                     return users.value.filter(u => u.role === 'teacher');
                 });
+
+                const teacherProjectTotal = computed(() => {
+                    return teacherProjects.reduce((sum, project) => sum + Number(project.max || 0), 0);
+                });
+
+                const classProjectStages = computed(() => {
+                    return ["非毕业年级", "毕业年级"].map(stage => {
+                        const projects = classProjects.filter(project => project.stage === stage);
+                        return {
+                            name: stage,
+                            projects,
+                            total: projects.reduce((sum, project) => sum + Number(project.max || 0), 0)
+                        };
+                    });
+                });
+
+                const roleCounts = computed(() => {
+                    return users.value.reduce((acc, user) => {
+                        acc[user.role] = (acc[user.role] || 0) + 1;
+                        return acc;
+                    }, {});
+                });
+
+                const gradeTeacherCounts = computed(() => {
+                    return teachers.value.reduce((acc, teacher) => {
+                        const grade = normalizeGrade(teacher.grade);
+                        acc[grade] = (acc[grade] || 0) + 1;
+                        return acc;
+                    }, {});
+                });
+
+                const gradeLeaderCounts = computed(() => {
+                    return users.value.filter(user => user.role === 'leader').reduce((acc, leader) => {
+                        const grade = normalizeGrade(leader.grade);
+                        acc[grade] = (acc[grade] || 0) + 1;
+                        return acc;
+                    }, {});
+                });
+
+                const gradeAssignmentCounts = computed(() => {
+                    return projectAssignments.value.reduce((acc, assignment) => {
+                        if (assignment.leader_id) {
+                            const grade = normalizeGrade(assignment.grade);
+                            acc[grade] = (acc[grade] || 0) + 1;
+                        }
+                        return acc;
+                    }, {});
+                });
+
+                const roleMatrix = [
+                    { key: "admin", name: "管理员", badge: "bg-red-50 text-red-600 border border-red-200", desc: "拥有全系统权限，可导入人员、设置角色、分发项目、删除账号、查看全部汇总。" },
+                    { key: "dean", name: "教研组长", badge: "bg-purple-50 text-purple-600 border border-purple-200", desc: "权限与管理员一致，用于教务统筹和质量分析汇总。" },
+                    { key: "leader", name: "考核组长", badge: "bg-blue-50 text-blue-600 border border-blue-200", desc: "只看到分配给自己的项目，并负责给所有适用教师录入该项目得分。" },
+                    { key: "teacher", name: "被考核教师", badge: "bg-green-50 text-green-700 border border-green-200", desc: "只查看个人教师成绩考核、班级考核得分、排名和项目填报状态。" }
+                ];
+
+                const functionCards = [
+                    { tab: "admin", title: "教师与角色导入", icon: "ti ti-file-import", iconClass: "bg-blue-50 text-blue-600", desc: "导入教师年级学科、任课班级；导入管理员、教研组长、考核组长和教师账号。" },
+                    { tab: "admin", title: "考核项目分发", icon: "ti ti-git-branch", iconClass: "bg-china-red/10 text-china-red", desc: "按 6-9 年级为不同考核组长分配不同项目，负责项目不出现在 Excel 导入表中。" },
+                    { tab: "leader", title: "组长项目填报", icon: "ti ti-edit", iconClass: "bg-green-50 text-green-700", desc: "考核组长进入后只看到自己负责的项目，对所有适用教师录入分值和说明。" },
+                    { tab: "summary", title: "汇总与排名", icon: "ti ti-chart-bar", iconClass: "bg-amber-50 text-amber-700", desc: "管理员和教研组长查看教师成绩考核得分、班级考核得分、自动总分和排名。" },
+                    { tab: "teacher", title: "教师个人端", icon: "ti ti-user-check", iconClass: "bg-purple-50 text-purple-600", desc: "被考核教师查看个人各项目得分、缺项、说明、教师成绩排名和班级考核排名。" },
+                    { tab: "settings", title: "方案与系统管理", icon: "ti ti-settings", iconClass: "bg-gray-100 text-ink", desc: "集中展示分值结构、公式口径、账号规则、毕业/非毕业年级规则和系统说明。" }
+                ];
 
                 // Filtered users list in admin panel
                 const filteredUsers = computed(() => {
@@ -1064,9 +1390,9 @@
 
                 // Helpers for grade classification
                 const gradeStage = (grade) => {
-                    const text = String(grade || "").trim();
-                    if (/[9九]/.test(text)) return "毕业年级";
-                    if (/[6六7七8八]/.test(text)) return "非毕业年级";
+                    const text = normalizeGrade(grade);
+                    if (text === "九年级") return "毕业年级";
+                    if (["六年级", "七年级", "八年级"].includes(text)) return "非毕业年级";
                     return "未设置";
                 };
 
@@ -1084,7 +1410,8 @@
 
                 // Leaders residing in specific grades
                 const getGradeLeaders = (grade) => {
-                    return users.value.filter(u => u.role === 'leader' && u.grade === grade);
+                    const normalized = normalizeGrade(grade);
+                    return users.value.filter(u => u.role === 'leader' && normalizeGrade(u.grade) === normalized);
                 };
 
                 const projectGroupLabel = (project) => {
@@ -1113,8 +1440,8 @@
 
                 const applicableTeachersForSelectedProject = computed(() => {
                     if (!selectedProjectEntry.value) return [];
-                    const grade = selectedProjectEntry.value.grade;
-                    return teachers.value.filter(t => t.grade === grade);
+                    const grade = normalizeGrade(selectedProjectEntry.value.grade);
+                    return teachers.value.filter(t => normalizeGrade(t.grade) === grade);
                 });
 
                 // Lookup a score record
@@ -1173,7 +1500,7 @@
                         return {
                             id: teacher.id,
                             name: teacher.full_name,
-                            grade: teacher.grade,
+                            grade: normalizeGrade(teacher.grade) || teacher.grade,
                             stage: gradeStage(teacher.grade),
                             subject: teacher.subject,
                             classes: teacher.classes,
@@ -1188,7 +1515,7 @@
                     // Perform filters
                     const filtered = rows.filter(row => {
                         if (filterStage.value && row.stage !== filterStage.value) return false;
-                        if (filterGrade.value && row.grade !== filterGrade.value) return false;
+                        if (filterGrade.value && normalizeGrade(row.grade) !== filterGrade.value) return false;
                         if (filterSubject.value && row.subject !== filterSubject.value) return false;
                         if (filterKeyword.value && !row.name.includes(filterKeyword.value)) return false;
                         if (filterStatus.value === 'complete' && row.missingCount > 0) return false;
@@ -1519,6 +1846,8 @@
                     currentUser,
                     dbError,
                     retryLoad,
+                    isAdminLike,
+                    isLeader,
                     users,
                     teachers,
                     projectAssignments,
@@ -1526,6 +1855,14 @@
                     grades,
                     teacherProjects,
                     classProjects,
+                    teacherProjectTotal,
+                    classProjectStages,
+                    roleCounts,
+                    gradeTeacherCounts,
+                    gradeLeaderCounts,
+                    gradeAssignmentCounts,
+                    roleMatrix,
+                    functionCards,
                     
                     tempAssignments,
                     leaderProjectId,
