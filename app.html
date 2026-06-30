@@ -295,7 +295,7 @@
                                 <p class="text-xs font-black tracking-[0.24em] text-china-red uppercase mb-2">System Workspace</p>
                                 <h2 class="text-2xl lg:text-3xl font-black font-serif text-ink leading-tight">教师教学质量考核工作台</h2>
                                 <p class="text-sm text-slate-warm mt-3 max-w-3xl leading-relaxed">
-                                    系统围绕“教师成绩考核”和“班级考核”两条平行主线运行。管理员和教研组长负责导入人员、配置角色、分发项目、查看汇总；考核组长只填报分配给自己的项目；被考核教师只查看个人结果。
+                                    系统围绕“教师成绩考核”和“班级考核”两条平行主线运行。管理员负责全系统人员和权限；教务主任负责组长、教师及汇总协同；考核组长只填报分配给自己的项目；被考核教师用独立账号查看个人各项分数、总分和排名。
                                 </p>
                             </div>
                             <div class="grid grid-cols-2 gap-3 shrink-0">
@@ -481,7 +481,7 @@
                                     <button @click="downloadUserTemplate" class="text-xs text-china-red hover:underline font-bold"><i class="ti ti-download mr-1"></i>下载模板</button>
                                 </div>
                                 <p class="text-xs text-slate-warm leading-relaxed mb-6">
-                                    批量导入全校管理员、教研组长、考核组长。模板默认每个年级 4 名考核组长；实际上传几名，系统就按几名参与项目分发。
+                                    批量导入全校管理员、教务主任、考核组长。模板默认每个年级 4 名考核组长；实际上传几名，系统就按几名参与项目分发。
                                 </p>
                                 <div class="mb-5 rounded-xl border border-[#D6CAB2] bg-gray-50/70 p-3">
                                     <div class="flex items-center justify-between gap-3">
@@ -513,7 +513,7 @@
                         <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
                             <div>
                                 <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-git-branch text-china-red text-xl"></i>考核项目组长分发</h3>
-                                <p class="text-xs text-slate-warm mt-1">每个考核组长在不同年级分到的项目不同。选择组长进行分发，负责项目支持多选多发。</p>
+                                <p class="text-xs text-slate-warm mt-1">每个项目指定一个负责考核组长；同一组长可以负责多个项目，不同年级可按实际情况分别分发。</p>
                             </div>
                             <div class="flex flex-wrap gap-2">
                                 <button @click="applyDefaultAssignments" class="border border-[#D6CAB2] bg-white hover:bg-gray-50 text-ink px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5 transition-all">
@@ -623,19 +623,101 @@
                         <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
                             <div>
                                 <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-users-group text-china-red text-xl"></i>人员名单及账号列表</h3>
-                                <p class="text-xs text-slate-warm mt-1">系统内所有账号，包含管理员、教研组长、考核组长及教师。</p>
+                                <p class="text-xs text-slate-warm mt-1">系统内所有账号，包含管理员、教务主任、考核组长及教师；可搜索查看、修改资料、重置密码和查看组长负责项目。</p>
                             </div>
                             <div class="flex gap-2">
                                 <input v-model="userSearchKey" placeholder="搜索姓名/账号" class="input-chinese px-4 py-2 rounded-xl text-xs w-48">
                                 <select v-model="userSearchRole" class="input-chinese px-3 py-2 rounded-xl text-xs">
                                     <option value="">全部角色</option>
                                     <option value="admin">管理员</option>
-                                    <option value="dean">教研组长</option>
+                                    <option value="dean">教务主任</option>
                                     <option value="leader">考核组长</option>
                                     <option value="teacher">被考核教师</option>
                                 </select>
                             </div>
                         </div>
+
+                        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
+                            <div class="xl:col-span-2 rounded-xl border border-[#D6CAB2] bg-gray-50/60 p-4">
+                                <div class="flex items-center justify-between gap-3 mb-4">
+                                    <div>
+                                        <h4 class="text-sm font-extrabold text-ink flex items-center gap-1.5"><i class="ti ti-user-cog text-china-red"></i>选中人员资料与权限</h4>
+                                        <p class="text-[11px] text-slate-warm mt-1">修改姓名、账号、密码、身份、年级学科和任课班级。密码留空时默认重置为 123456。</p>
+                                    </div>
+                                    <button @click="clearUserEditForm" class="px-3 py-2 rounded-lg border border-[#D6CAB2] bg-white hover:bg-gray-50 text-xs font-bold text-slate-warm">
+                                        新建/清空
+                                    </button>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-[11px] text-slate-warm font-bold">姓名</label>
+                                        <input v-model="userEditForm.full_name" class="input-chinese px-3 py-2 rounded-lg text-xs" placeholder="教师姓名">
+                                    </div>
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-[11px] text-slate-warm font-bold">账号</label>
+                                        <input v-model="userEditForm.username" class="input-chinese px-3 py-2 rounded-lg text-xs font-mono" placeholder="登录账号">
+                                    </div>
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-[11px] text-slate-warm font-bold">密码</label>
+                                        <input v-model="userEditForm.password" type="text" class="input-chinese px-3 py-2 rounded-lg text-xs font-mono" placeholder="留空为 123456">
+                                    </div>
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-[11px] text-slate-warm font-bold">身份/权限</label>
+                                        <select v-model="userEditForm.role" class="input-chinese px-3 py-2 rounded-lg text-xs">
+                                            <option v-for="role in manageableRoleOptions" :key="role.key" :value="role.key">
+                                                {{ role.name }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-[11px] text-slate-warm font-bold">年级</label>
+                                        <select v-model="userEditForm.grade" class="input-chinese px-3 py-2 rounded-lg text-xs">
+                                            <option value="">不限定年级</option>
+                                            <option v-for="grade in grades" :key="grade" :value="grade">{{ grade }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="flex flex-col gap-1.5">
+                                        <label class="text-[11px] text-slate-warm font-bold">学科</label>
+                                        <input v-model="userEditForm.subject" class="input-chinese px-3 py-2 rounded-lg text-xs" placeholder="语文/数学/英语">
+                                    </div>
+                                    <div class="flex flex-col gap-1.5 md:col-span-2">
+                                        <label class="text-[11px] text-slate-warm font-bold">任课班级/备注</label>
+                                        <input v-model="userEditForm.classes" class="input-chinese px-3 py-2 rounded-lg text-xs" placeholder="1班、2班">
+                                    </div>
+                                </div>
+                                <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                                    <p class="text-[11px] text-slate-warm">权限层级：管理员 > 教务主任 > 考核组长 > 被考核教师。只能修改低于自己权限的账号；被考核教师只查看个人各项分数、总分和排名。</p>
+                                    <button @click="saveUserEditForm" class="bg-china-red hover:bg-[#7D2E3E] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5">
+                                        <i class="ti ti-device-floppy"></i>保存账号与权限
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="rounded-xl border border-[#D6CAB2] bg-white p-4">
+                                <h4 class="text-sm font-extrabold text-ink flex items-center gap-1.5"><i class="ti ti-list-check text-china-red"></i>选中人员项目查看</h4>
+                                <p class="text-[11px] text-slate-warm mt-1">选择考核组长时显示其负责项目；选择教师时显示其适用项目数量。</p>
+                                <div v-if="selectedAdminUser" class="mt-4 space-y-2">
+                                    <div class="flex items-center justify-between rounded-lg bg-gray-50 border border-[#D6CAB2] px-3 py-2">
+                                        <span class="text-xs font-bold text-ink">{{ selectedAdminUser.full_name }}</span>
+                                        <span :class="roleBadgeClass(selectedAdminUser.role)" class="px-2 py-0.5 rounded-full text-[10px] font-bold">{{ roleLabel(selectedAdminUser.role) }}</span>
+                                    </div>
+                                    <div v-if="selectedAdminUser.role === 'leader'" class="max-h-48 overflow-y-auto space-y-1.5">
+                                        <div v-for="item in selectedUserAssignedProjects" :key="item.grade + item.project.id" class="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                                            <p class="text-xs font-extrabold text-ink">{{ item.grade }} · {{ item.project.name }}</p>
+                                            <p class="text-[10px] text-slate-warm mt-0.5">{{ projectGroupLabel(item.project) }} · {{ item.project.max }} 分</p>
+                                        </div>
+                                        <p v-if="selectedUserAssignedProjects.length === 0" class="text-xs text-slate-warm font-bold text-center py-6">该组长暂未分配项目。</p>
+                                    </div>
+                                    <div v-else-if="selectedAdminUser.role === 'teacher'" class="text-xs text-slate-warm leading-relaxed">
+                                        适用项目 {{ getTeacherApplicableProjects(selectedAdminUser).length }} 个，年级类型：{{ gradeStage(selectedAdminUser.grade) }}。
+                                    </div>
+                                    <div v-else class="text-xs text-slate-warm leading-relaxed">
+                                        该身份拥有管理权限，可进入导入分发、人员管理、组长填报和管理员汇总模块。
+                                    </div>
+                                </div>
+                                <p v-else class="text-xs text-slate-warm font-bold text-center py-10">从下方列表选择一个人员。</p>
+                            </div>
+                        </div>
+
                         <div class="overflow-x-auto rounded-xl border border-[#D6CAB2]">
                             <table class="w-full text-left text-xs border-collapse">
                                 <thead>
@@ -662,9 +744,17 @@
                                         <td class="py-3.5 px-5 font-semibold text-slate-warm">{{ user.subject || '-' }}</td>
                                         <td class="py-3.5 px-5 font-semibold text-slate-warm">{{ user.classes || '-' }}</td>
                                         <td class="py-3.5 px-5 text-center">
-                                            <button @click="handleDeleteUser(user)" class="text-red-500 hover:text-red-700 font-extrabold hover:underline" :disabled="user.id === currentUser.id">
+                                            <div class="flex items-center justify-center gap-2">
+                                            <button @click="selectUserForEdit(user)" class="text-china-red hover:underline font-extrabold" :class="canManageUser(user) ? '' : 'opacity-40 cursor-not-allowed'" :disabled="!canManageUser(user)">
+                                                编辑
+                                            </button>
+                                            <button @click="selectUserForEdit(user)" class="text-blue-600 hover:underline font-extrabold">
+                                                查看
+                                            </button>
+                                            <button @click="handleDeleteUser(user)" class="text-red-500 hover:text-red-700 font-extrabold hover:underline" :class="canManageUser(user) ? '' : 'opacity-40 cursor-not-allowed'" :disabled="!canManageUser(user)">
                                                 删除
                                             </button>
+                                            </div>
                                         </td>
                                     </tr>
                                     <tr v-if="filteredUsers.length === 0">
@@ -1170,7 +1260,7 @@
                                     </li>
                                 </ul>
                             </div>
-                            <p class="text-slate-warm font-medium">班级考核与教师成绩考核没有从属关系，管理员和教研组长分别查看两套总分与排名。</p>
+                            <p class="text-slate-warm font-medium">班级考核与教师成绩考核没有从属关系，管理员和教务主任分别查看两套总分与排名。</p>
                         </div>
                     </div>
 
@@ -1223,7 +1313,7 @@
                             </button>
                             <button @click="downloadUserTemplate" class="px-4 py-3 rounded-xl border border-[#D6CAB2] bg-gray-50 hover:bg-white text-left">
                                 <span class="text-sm font-extrabold text-ink"><i class="ti ti-download text-china-red mr-1"></i>下载角色账号模板</span>
-                                <p class="text-xs text-slate-warm mt-1">用于导入管理员、教研组长、考核组长和教师账号；默认每年级 4 名组长。</p>
+                                <p class="text-xs text-slate-warm mt-1">用于导入管理员、教务主任、考核组长和教师账号；默认每年级 4 名组长。</p>
                             </button>
                             <button @click="handleLogout" class="px-4 py-3 rounded-xl border border-red-200 bg-red-50 hover:bg-white text-left">
                                 <span class="text-sm font-extrabold text-red-600"><i class="ti ti-logout mr-1"></i>退出系统</span>
@@ -1302,6 +1392,17 @@
                 // Search filters for admin user list
                 const userSearchKey = ref('');
                 const userSearchRole = ref('');
+                const selectedAdminUserId = ref('');
+                const userEditForm = ref({
+                    id: '',
+                    full_name: '',
+                    username: '',
+                    password: '',
+                    role: 'teacher',
+                    grade: '',
+                    subject: '',
+                    classes: ''
+                });
                 
                 // Summary Filters
                 const filterStage = ref('');
@@ -1431,11 +1532,28 @@
                 const roleLabel = (role) => {
                     const map = {
                         admin: "系统管理员",
-                        dean: "教研组长",
+                        dean: "教务主任",
                         leader: "考核组长",
                         teacher: "被考核教师"
                     };
                     return map[role] || role;
+                };
+
+                const roleLevel = (role) => {
+                    const levels = {
+                        teacher: 1,
+                        leader: 2,
+                        dean: 3,
+                        admin: 4
+                    };
+                    return levels[role] || 0;
+                };
+
+                const canManageUser = (user) => {
+                    if (!currentUser.value || !user) return false;
+                    if (user.id === currentUser.value.id) return false;
+                    if (currentUser.value.role === 'admin') return true;
+                    return roleLevel(currentUser.value.role) > roleLevel(user.role);
                 };
 
                 // Badge mapping styling
@@ -1533,17 +1651,22 @@
                 });
 
                 const roleMatrix = [
-                    { key: "admin", name: "管理员", badge: "bg-red-50 text-red-600 border border-red-200", desc: "拥有全系统权限，可导入人员、设置角色、分发项目、删除账号、查看全部汇总。" },
-                    { key: "dean", name: "教研组长", badge: "bg-purple-50 text-purple-600 border border-purple-200", desc: "权限与管理员一致，用于教务统筹和质量分析汇总。" },
-                    { key: "leader", name: "考核组长", badge: "bg-blue-50 text-blue-600 border border-blue-200", desc: "只看到分配给自己的项目，并负责给所有适用教师录入该项目得分。" },
-                    { key: "teacher", name: "被考核教师", badge: "bg-green-50 text-green-700 border border-green-200", desc: "只查看个人教师成绩考核、班级考核得分、排名和项目填报状态。" }
+                    { key: "admin", name: "管理员", badge: "bg-red-50 text-red-600 border border-red-200", desc: "最高权限，可管理教务主任、考核组长、被考核教师，导入人员、设置角色、分发项目、删除账号、查看全部汇总。" },
+                    { key: "dean", name: "教务主任", badge: "bg-purple-50 text-purple-600 border border-purple-200", desc: "低于管理员，可管理考核组长和被考核教师，查看汇总并协助项目分发。" },
+                    { key: "leader", name: "考核组长", badge: "bg-blue-50 text-blue-600 border border-blue-200", desc: "只看到分配给自己的项目，并负责给对应年级教师录入该项目得分。" },
+                    { key: "teacher", name: "被考核教师", badge: "bg-green-50 text-green-700 border border-green-200", desc: "单独账号登录，只查看本人各项分数、教师成绩总分、班级考核总分和排名。" }
                 ];
 
+                const manageableRoleOptions = computed(() => {
+                    if (currentUser.value?.role === 'admin') return roleMatrix;
+                    return roleMatrix.filter(role => roleLevel(currentUser.value?.role) > roleLevel(role.key));
+                });
+
                 const functionCards = [
-                    { tab: "admin", title: "教师与角色导入", icon: "ti ti-file-import", iconClass: "bg-blue-50 text-blue-600", desc: "导入教师年级学科、任课班级；导入管理员、教研组长、考核组长和教师账号，模板默认每年级 4 名组长。" },
+                    { tab: "admin", title: "教师与角色导入", icon: "ti ti-file-import", iconClass: "bg-blue-50 text-blue-600", desc: "导入教师年级学科、任课班级；导入管理员、教务主任、考核组长和教师账号，模板默认每年级 4 名组长。" },
                     { tab: "admin", title: "考核项目分发", icon: "ti ti-git-branch", iconClass: "bg-china-red/10 text-china-red", desc: "按 6-9 年级为不同考核组长分配不同项目，负责项目不出现在 Excel 导入表中。" },
                     { tab: "leader", title: "组长项目填报", icon: "ti ti-edit", iconClass: "bg-green-50 text-green-700", desc: "考核组长进入后只看到自己负责的项目，对所有适用教师录入分值和说明。" },
-                    { tab: "summary", title: "汇总与排名", icon: "ti ti-chart-bar", iconClass: "bg-amber-50 text-amber-700", desc: "管理员和教研组长查看教师成绩考核得分、班级考核得分、自动总分和排名。" },
+                    { tab: "summary", title: "汇总与排名", icon: "ti ti-chart-bar", iconClass: "bg-amber-50 text-amber-700", desc: "管理员和教务主任查看教师成绩考核得分、班级考核得分、自动总分和排名。" },
                     { tab: "teacher", title: "教师个人端", icon: "ti ti-user-check", iconClass: "bg-purple-50 text-purple-600", desc: "被考核教师查看个人各项目得分、缺项、说明、教师成绩排名和班级考核排名。" },
                     { tab: "settings", title: "方案与系统管理", icon: "ti ti-settings", iconClass: "bg-gray-100 text-ink", desc: "集中展示分值结构、公式口径、账号规则、毕业/非毕业年级规则和系统说明。" }
                 ];
@@ -1557,6 +1680,24 @@
                         const matchesRole = !userSearchRole.value || u.role === userSearchRole.value;
                         return matchesSearch && matchesRole;
                     }).sort((a, b) => a.role.localeCompare(b.role) || a.username.localeCompare(b.username));
+                });
+
+                const selectedAdminUser = computed(() => {
+                    return users.value.find(user => user.id === selectedAdminUserId.value) || null;
+                });
+
+                const selectedUserAssignedProjects = computed(() => {
+                    const user = selectedAdminUser.value;
+                    if (!user || user.role !== 'leader') return [];
+                    const list = [];
+                    grades.forEach(grade => {
+                        getGradeProjects(grade).forEach(project => {
+                            if (tempAssignments.value[grade + '::' + project.id] === user.id) {
+                                list.push({ grade, project });
+                            }
+                        });
+                    });
+                    return list;
                 });
 
                 // Unique subjects for filtering
@@ -1718,6 +1859,78 @@
                     });
                 };
 
+                const clearUserEditForm = () => {
+                    selectedAdminUserId.value = '';
+                    const fallbackRole = manageableRoleOptions.value[0]?.key || 'teacher';
+                    userEditForm.value = {
+                        id: '',
+                        full_name: '',
+                        username: '',
+                        password: '',
+                        role: fallbackRole,
+                        grade: '',
+                        subject: '',
+                        classes: ''
+                    };
+                };
+
+                const selectUserForEdit = (user) => {
+                    selectedAdminUserId.value = user.id;
+                    userEditForm.value = {
+                        id: user.id,
+                        full_name: user.full_name || '',
+                        username: user.username || '',
+                        password: '',
+                        role: user.role || 'teacher',
+                        grade: normalizeGrade(user.grade) || '',
+                        subject: user.subject || '',
+                        classes: user.classes || ''
+                    };
+                };
+
+                const saveUserEditForm = async () => {
+                    const form = userEditForm.value;
+                    const isExisting = !!form.id;
+                    const targetUser = isExisting ? users.value.find(user => user.id === form.id) : null;
+                    const targetRole = form.role || 'teacher';
+
+                    if (!form.full_name.trim() || !form.username.trim()) {
+                        alert('请填写姓名和账号。');
+                        return;
+                    }
+                    if (currentUser.value?.role !== 'admin' && roleLevel(currentUser.value?.role) <= roleLevel(targetRole)) {
+                        alert('权限不足：不能创建或修改为等于/高于自己权限的身份。');
+                        return;
+                    }
+                    if (targetUser && !canManageUser(targetUser)) {
+                        alert('权限不足：不能修改等于/高于自己权限的账号，也不能修改自己的账号。');
+                        return;
+                    }
+
+                    setLoading(true, isExisting ? '正在更新账号与权限...' : '正在创建账号...');
+                    try {
+                        const { error } = await sbClient.rpc('admin_create_user', {
+                            username_text: form.username.trim(),
+                            password_text: String(form.password || '123456').trim() || '123456',
+                            full_name_text: form.full_name.trim(),
+                            role_text: targetRole,
+                            grade_text: form.grade || null,
+                            subject_text: form.subject || null,
+                            classes_text: form.classes || null
+                        });
+                        if (error) throw error;
+
+                        await loadAllData();
+                        const updated = users.value.find(user => user.username === form.username.trim());
+                        if (updated) selectUserForEdit(updated);
+                        alert(isExisting ? '账号、密码和权限已更新。' : '账号已创建。');
+                    } catch (e) {
+                        alert('保存账号失败: ' + e.message);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
                 // Count stats
                 const submittedScoresCount = computed(() => {
                     return assessmentScores.value.filter(s => s.status === 'submitted').length;
@@ -1875,7 +2088,7 @@
                 };
 
                 const clearAssignmentsForGrade = (grade) => {
-                    if (!confirm(`确认清空 ${grade} 的全部项目分发吗？清空后这些项目将由管理员/教研组长兜底填报，保存后生效。`)) return;
+                    if (!confirm(`确认清空 ${grade} 的全部项目分发吗？清空后这些项目将由管理员/教务主任兜底填报，保存后生效。`)) return;
                     const nextAssignments = { ...tempAssignments.value };
                     getGradeProjects(grade).forEach(project => {
                         nextAssignments[grade + '::' + project.id] = '';
@@ -1934,7 +2147,7 @@
                             .filter(item => item.missing > 0);
                         if (missing.length > 0) {
                             const text = missing.map(item => `${item.grade}${item.missing}项`).join('、');
-                            const ok = confirm(`仍有未分配项目：${text}。未分配项目将由管理员/教研组长兜底填报，确认继续保存吗？`);
+                            const ok = confirm(`仍有未分配项目：${text}。未分配项目将由管理员/教务主任兜底填报，确认继续保存吗？`);
                             if (!ok) return;
                         }
                         
@@ -2000,7 +2213,10 @@
 
                 // Delete accounts securely (Admin only)
                 const handleDeleteUser = async (user) => {
-                    if (user.id === currentUser.value.id) return;
+                    if (!canManageUser(user)) {
+                        alert('权限不足：不能删除自己或等于/高于自己权限的账号。');
+                        return;
+                    }
                     if (!confirm(`警告：确认删除人员【${user.full_name}】？这将清除该账号下的所有角色配置及考核得分记录，且不可恢复！`)) return;
                     
                     setLoading(true, `正在删除用户 ${user.full_name}...`);
@@ -2054,6 +2270,10 @@
                                     "被考核教师": "teacher", "教师": "teacher", "teacher": "teacher"
                                 };
                                 const role = roleMap[roleText] || (mode === 'teacher' ? 'teacher' : 'teacher');
+                                if (currentUser.value?.role !== 'admin' && roleLevel(currentUser.value?.role) <= roleLevel(role)) {
+                                    console.error(`Import skipped for row ${i + 1} (${name}): insufficient role permission`);
+                                    continue;
+                                }
                                 
                                 const grade = normalizeGrade(String(row["年级"] || "").trim());
                                 const subject = String(row["学科"] || row["科目"] || "").trim();
@@ -2116,7 +2336,7 @@
                     const leaderCount = Math.max(1, Math.min(12, Number(defaultLeaderCount.value) || 4));
                     const rows = [
                         { "姓名": "系统管理员", "账号": "admin", "密码": "123456", "角色": "管理员", "年级": "", "学科": "" },
-                        { "姓名": "教研组长", "账号": "research_leader", "密码": "123456", "角色": "教研组长", "年级": "", "学科": "" },
+                        { "姓名": "教务主任", "账号": "dean", "密码": "123456", "角色": "教务主任", "年级": "", "学科": "" },
                     ];
                     const gradeSeeds = [
                         ["六年级", "g6"],
@@ -2240,6 +2460,11 @@
                     
                     userSearchKey,
                     userSearchRole,
+                    selectedAdminUserId,
+                    selectedAdminUser,
+                    selectedUserAssignedProjects,
+                    userEditForm,
+                    manageableRoleOptions,
                     filteredUsers,
                     uniqueSubjects,
                     
@@ -2254,6 +2479,8 @@
                     targetTeacherRow,
                     
                     roleLabel,
+                    roleLevel,
+                    canManageUser,
                     roleBadgeClass,
                     scoreStatusBadgeClass,
                     scoreStatusLabel,
@@ -2287,6 +2514,9 @@
                     applyDefaultAssignments,
                     saveAssignments,
                     saveVisibleScores,
+                    clearUserEditForm,
+                    selectUserForEdit,
+                    saveUserEditForm,
                     handleDeleteUser,
                     handleImportExcel,
                     downloadTeacherTemplate,
