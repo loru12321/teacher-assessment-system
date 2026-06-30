@@ -455,8 +455,19 @@
                 
                 <!-- VIEW 1: ADMIN - IMPORT & ASSIGNMENT -->
                 <div v-if="activeTab === 'admin' && isAdminLike" class="space-y-6">
+                    <div class="premium-card p-3">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                            <button v-for="item in adminSubModules" :key="item.key" @click="adminSubTab = item.key"
+                                    class="px-4 py-3 rounded-xl text-left border transition-all"
+                                    :class="adminSubTab === item.key ? 'bg-china-red text-white border-china-red shadow-md shadow-red-100' : 'bg-white border-[#D6CAB2] text-ink hover:bg-gray-50'">
+                                <span class="text-sm font-extrabold flex items-center gap-2"><i :class="item.icon"></i>{{ item.name }}</span>
+                                <p class="text-[11px] mt-1" :class="adminSubTab === item.key ? 'text-white/80' : 'text-slate-warm'">{{ item.desc }}</p>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Excel Import Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div v-show="adminSubTab === 'imports'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="premium-card p-6 flex flex-col justify-between">
                             <div>
                                 <div class="flex items-center justify-between mb-4">
@@ -509,7 +520,7 @@
                     </div>
 
                     <!-- Project Assignments Dropdowns Panel -->
-                    <div class="premium-card p-6">
+                    <div v-show="adminSubTab === 'assignments'" class="premium-card p-6">
                         <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
                             <div>
                                 <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-git-branch text-china-red text-xl"></i>考核项目组长分发</h3>
@@ -619,7 +630,7 @@
                     </div>
 
                     <!-- User List Panel -->
-                    <div class="premium-card p-6">
+                    <div v-show="adminSubTab === 'people'" class="premium-card p-6">
                         <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
                             <div>
                                 <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-users-group text-china-red text-xl"></i>人员名单及账号列表</h3>
@@ -900,8 +911,19 @@
 
                 <!-- VIEW 3: SUMMARY - FULL TABLE WITH DYNAMIC RANKS -->
                 <div v-if="activeTab === 'summary' && isAdminLike" class="space-y-6">
+                    <div class="premium-card p-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <button v-for="item in summarySubModules" :key="item.key" @click="summarySubTab = item.key"
+                                    class="px-4 py-3 rounded-xl text-left border transition-all"
+                                    :class="summarySubTab === item.key ? 'bg-china-red text-white border-china-red shadow-md shadow-red-100' : 'bg-white border-[#D6CAB2] text-ink hover:bg-gray-50'">
+                                <span class="text-sm font-extrabold flex items-center gap-2"><i :class="item.icon"></i>{{ item.name }}</span>
+                                <p class="text-[11px] mt-1" :class="summarySubTab === item.key ? 'text-white/80' : 'text-slate-warm'">{{ item.desc }}</p>
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Advanced Filters -->
-                    <div class="premium-card p-6">
+                    <div v-show="summarySubTab === 'filters'" class="premium-card p-6">
                         <h3 class="text-sm font-extrabold text-slate-warm uppercase tracking-wider mb-4"><i class="ti ti-filter mr-1"></i>考核数据过滤器</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                             <div class="flex flex-col gap-1.5">
@@ -942,7 +964,7 @@
                     </div>
 
                     <!-- Summary Scoreboard Card -->
-                    <div class="premium-card p-6">
+                    <div v-show="summarySubTab === 'board'" class="premium-card p-6">
                         <div class="flex items-center justify-between mb-6 flex-wrap gap-4 border-b border-gray-100 pb-4">
                             <div>
                                 <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-chart-bar text-china-red text-xl"></i>成绩考核与班级考核平行汇总表</h3>
@@ -1118,6 +1140,17 @@
 
                 <!-- VIEW 4: TEACHER - PERSONAL SCORECARD -->
                 <div v-if="activeTab === 'teacher' && (currentUser?.role === 'teacher' || isAdminLike)" class="space-y-6">
+                    <div class="premium-card p-3">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <button v-for="item in teacherSubModules" :key="item.key" @click="teacherSubTab = item.key"
+                                    class="px-4 py-3 rounded-xl text-left border transition-all"
+                                    :class="teacherSubTab === item.key ? 'bg-china-red text-white border-china-red shadow-md shadow-red-100' : 'bg-white border-[#D6CAB2] text-ink hover:bg-gray-50'">
+                                <span class="text-sm font-extrabold flex items-center gap-2"><i :class="item.icon"></i>{{ item.name }}</span>
+                                <p class="text-[11px] mt-1" :class="teacherSubTab === item.key ? 'text-white/80' : 'text-slate-warm'">{{ item.desc }}</p>
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="premium-card p-6">
                         <div class="flex items-center justify-between mb-6 flex-wrap gap-4 border-b border-gray-100 pb-4">
                             <div>
@@ -1137,7 +1170,7 @@
                         </div>
 
                         <!-- Scorecard Grid metrics -->
-                        <div v-if="targetTeacherRow" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div v-if="targetTeacherRow && teacherSubTab === 'overview'" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                             <div class="bg-gray-50 border border-[#D6CAB2] rounded-xl p-5 text-center">
                                 <span class="text-xs text-slate-warm font-bold">个人信息</span>
                                 <h3 class="text-lg font-black text-ink mt-1 font-serif">{{ targetTeacherRow.name }}</h3>
@@ -1163,7 +1196,7 @@
                         </div>
 
                         <!-- score details list -->
-                        <div v-if="targetTeacherRow" class="overflow-x-auto rounded-xl border border-[#D6CAB2]">
+                        <div v-if="targetTeacherRow && teacherSubTab === 'details'" class="overflow-x-auto rounded-xl border border-[#D6CAB2]">
                             <table class="w-full text-left text-xs border-collapse">
                                 <thead>
                                     <tr class="bg-gray-50 border-b border-[#D6CAB2]">
@@ -1206,8 +1239,19 @@
                 </div>
 
                 <!-- VIEW 5: SETTINGS & DOCUMENTATION -->
-                <div v-if="activeTab === 'settings'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="premium-card p-6 lg:col-span-2">
+                <div v-if="activeTab === 'settings'" class="space-y-6">
+                    <div class="premium-card p-3">
+                        <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-2">
+                            <button v-for="item in settingsSubModules" :key="item.key" @click="settingsSubTab = item.key"
+                                    class="px-4 py-3 rounded-xl text-left border transition-all"
+                                    :class="settingsSubTab === item.key ? 'bg-china-red text-white border-china-red shadow-md shadow-red-100' : 'bg-white border-[#D6CAB2] text-ink hover:bg-gray-50'">
+                                <span class="text-sm font-extrabold flex items-center gap-2"><i :class="item.icon"></i>{{ item.name }}</span>
+                                <p class="text-[11px] mt-1" :class="settingsSubTab === item.key ? 'text-white/80' : 'text-slate-warm'">{{ item.desc }}</p>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-show="settingsSubTab === 'status'" class="premium-card p-6">
                         <div class="flex items-center justify-between gap-4 flex-wrap">
                             <div>
                                 <h3 class="text-lg font-extrabold text-china-red flex items-center gap-2"><i class="ti ti-settings"></i>系统管理状态</h3>
@@ -1226,7 +1270,7 @@
                         </div>
                     </div>
 
-                    <div class="premium-card p-6 space-y-4">
+                    <div v-show="settingsSubTab === 'teacherRules'" class="premium-card p-6 space-y-4">
                         <h3 class="text-base font-extrabold text-china-red border-b border-gray-100 pb-2 flex items-center gap-1.5"><i class="ti ti-file-text"></i>教师成绩评价办法</h3>
                         <div class="text-xs text-ink leading-relaxed space-y-3">
                             <p>教师个人考核成绩总分 {{ teacherProjectTotal }} 分，由以下六项组成：</p>
@@ -1245,7 +1289,7 @@
                         </div>
                     </div>
                     
-                    <div class="premium-card p-6 space-y-4">
+                    <div v-show="settingsSubTab === 'classRules'" class="premium-card p-6 space-y-4">
                         <h3 class="text-base font-extrabold text-china-red border-b border-gray-100 pb-2 flex items-center gap-1.5"><i class="ti ti-file-certificate"></i>班级成绩考核办法 (与教师平行)</h3>
                         <div class="text-xs text-ink leading-relaxed space-y-3">
                             <div v-for="stage in classProjectStages" :key="stage.name" class="rounded-xl border border-gray-100 bg-gray-50/50 p-3">
@@ -1264,7 +1308,7 @@
                         </div>
                     </div>
 
-                    <div class="premium-card p-6 space-y-4">
+                    <div v-show="settingsSubTab === 'roles'" class="premium-card p-6 space-y-4">
                         <h3 class="text-base font-extrabold text-china-red border-b border-gray-100 pb-2 flex items-center gap-1.5"><i class="ti ti-id-badge"></i>角色设置规则</h3>
                         <div class="space-y-3">
                             <div v-for="role in roleMatrix" :key="role.key" class="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
@@ -1277,7 +1321,7 @@
                         </div>
                     </div>
 
-                    <div class="premium-card p-6 space-y-4">
+                    <div v-show="settingsSubTab === 'grades'" class="premium-card p-6 space-y-4">
                         <h3 class="text-base font-extrabold text-china-red border-b border-gray-100 pb-2 flex items-center gap-1.5"><i class="ti ti-school"></i>年级与项目配置</h3>
                         <div class="rounded-xl border border-[#D6CAB2] overflow-hidden">
                             <table class="w-full text-left text-xs">
@@ -1304,7 +1348,7 @@
                         <p class="text-xs text-slate-warm leading-relaxed">毕业年级固定为九年级；非毕业年级为六、七、八年级。不同年级的项目可分配给不同考核组长。</p>
                     </div>
 
-                    <div class="premium-card p-6 space-y-4">
+                    <div v-show="settingsSubTab === 'tools'" class="premium-card p-6 space-y-4">
                         <h3 class="text-base font-extrabold text-china-red border-b border-gray-100 pb-2 flex items-center gap-1.5"><i class="ti ti-tool"></i>管理操作</h3>
                         <div class="grid grid-cols-1 gap-3">
                             <button @click="downloadTeacherTemplate" class="px-4 py-3 rounded-xl border border-[#D6CAB2] bg-gray-50 hover:bg-white text-left">
@@ -1363,6 +1407,10 @@
                 const loadingText = ref('');
                 const loadingProgress = ref(0);
                 const activeTab = ref('overview');
+                const adminSubTab = ref('imports');
+                const summarySubTab = ref('board');
+                const teacherSubTab = ref('overview');
+                const settingsSubTab = ref('status');
                 const currentUser = ref(null);
                 const dbError = ref('');
                 
@@ -1669,6 +1717,31 @@
                     { tab: "summary", title: "汇总与排名", icon: "ti ti-chart-bar", iconClass: "bg-amber-50 text-amber-700", desc: "管理员和教务主任查看教师成绩考核得分、班级考核得分、自动总分和排名。" },
                     { tab: "teacher", title: "教师个人端", icon: "ti ti-user-check", iconClass: "bg-purple-50 text-purple-600", desc: "被考核教师查看个人各项目得分、缺项、说明、教师成绩排名和班级考核排名。" },
                     { tab: "settings", title: "方案与系统管理", icon: "ti ti-settings", iconClass: "bg-gray-100 text-ink", desc: "集中展示分值结构、公式口径、账号规则、毕业/非毕业年级规则和系统说明。" }
+                ];
+
+                const adminSubModules = [
+                    { key: "imports", name: "导入模板", icon: "ti ti-file-import", desc: "导入教师、账号和下载模板。" },
+                    { key: "assignments", name: "项目分发", icon: "ti ti-git-branch", desc: "按年级分配考核项目。" },
+                    { key: "people", name: "人员权限", icon: "ti ti-user-cog", desc: "搜索、查看和修改账号权限。" }
+                ];
+
+                const summarySubModules = [
+                    { key: "board", name: "汇总排名", icon: "ti ti-table", desc: "查看得分、总分、排名和明细。" },
+                    { key: "filters", name: "筛选条件", icon: "ti ti-filter", desc: "按年级、学科、状态筛选。" }
+                ];
+
+                const teacherSubModules = [
+                    { key: "overview", name: "个人概览", icon: "ti ti-id-badge", desc: "查看总分、排名和完整度。" },
+                    { key: "details", name: "项目明细", icon: "ti ti-list-details", desc: "查看每一项得分和备注。" }
+                ];
+
+                const settingsSubModules = [
+                    { key: "status", name: "系统状态", icon: "ti ti-dashboard", desc: "角色人数与快捷入口。" },
+                    { key: "teacherRules", name: "教师办法", icon: "ti ti-file-text", desc: "教师考核分值结构。" },
+                    { key: "classRules", name: "班级办法", icon: "ti ti-file-certificate", desc: "班级考核分值结构。" },
+                    { key: "roles", name: "角色权限", icon: "ti ti-id-badge", desc: "角色层级和职责。" },
+                    { key: "grades", name: "年级项目", icon: "ti ti-school", desc: "年级类型和项目数。" },
+                    { key: "tools", name: "管理操作", icon: "ti ti-tool", desc: "模板下载和退出。" }
                 ];
 
                 // Filtered users list in admin panel
@@ -2430,6 +2503,10 @@
                     loadingText,
                     loadingProgress,
                     activeTab,
+                    adminSubTab,
+                    summarySubTab,
+                    teacherSubTab,
+                    settingsSubTab,
                     currentUser,
                     dbError,
                     retryLoad,
@@ -2452,6 +2529,10 @@
                     openedGradePanels,
                     roleMatrix,
                     functionCards,
+                    adminSubModules,
+                    summarySubModules,
+                    teacherSubModules,
+                    settingsSubModules,
                     
                     tempAssignments,
                     leaderProjectId,
