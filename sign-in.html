@@ -102,7 +102,7 @@
                         <span class="w-8 h-8 rounded-lg bg-china-red/5 text-china-red flex items-center justify-center text-lg shrink-0 mt-0.5"><i class="ti ti-report-analytics"></i></span>
                         <div>
                             <h4 class="text-xs font-bold text-ink mb-1">双主线平行汇总</h4>
-                            <p class="text-[11px] text-slate-warm leading-normal">教务主任和管理员汇总看板可实时查询教师和班级评分及名次。</p>
+                            <p class="text-[11px] text-slate-warm leading-normal">教研组长和管理员汇总看板可实时查询教师和班级评分及名次。</p>
                         </div>
                     </div>
                 </div>
@@ -168,7 +168,7 @@
                                 <strong>管理员:</strong> admin
                             </button>
                             <button @click="quickLogin('research_leader')" class="py-1.5 px-2 bg-white hover:bg-purple-50 text-purple-600 border border-purple-100 rounded-lg text-left truncate">
-                                <strong>教务主任:</strong> research_leader
+                                <strong>教研组长:</strong> research_leader
                             </button>
                             <button @click="quickLogin('g6_leader_1')" class="py-1.5 px-2 bg-white hover:bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-left truncate">
                                 <strong>6年级考核组长:</strong> g6_leader_1
@@ -258,19 +258,29 @@
 
                 // Initialize cloud database default accounts if empty
                 const initializeDemoAccounts = async () => {
-                    if (!confirm('确认初始化默认账号？系统将连接 Supabase 并在云端创建预置管理员、教研主任、考核组长及教师账号。如果账号已存在则可能跳过。')) return;
+                    if (!confirm('确认初始化默认账号？系统将连接 Supabase 并在云端创建预置管理员、教研组长、考核组长及教师账号。如果账号已存在则可能跳过。')) return;
                     
                     setLoading(true, '正在连接 Supabase 初始化账号，预计需要 5-10 秒...');
                     try {
                         const demoUsers = [
                             { username: "admin", name: "系统管理员", role: "admin", grade: "", subject: "", classes: "" },
-                            { username: "research_leader", name: "教务主任", role: "dean", grade: "", subject: "", classes: "" },
+                            { username: "research_leader", name: "教研组长", role: "dean", grade: "", subject: "", classes: "" },
                             { username: "g6_leader_1", name: "六年级考核组长1", role: "leader", grade: "六年级", subject: "", classes: "" },
                             { username: "g6_leader_2", name: "六年级考核组长2", role: "leader", grade: "六年级", subject: "", classes: "" },
+                            { username: "g6_leader_3", name: "六年级考核组长3", role: "leader", grade: "六年级", subject: "", classes: "" },
+                            { username: "g6_leader_4", name: "六年级考核组长4", role: "leader", grade: "六年级", subject: "", classes: "" },
                             { username: "g7_leader_1", name: "七年级考核组长1", role: "leader", grade: "七年级", subject: "", classes: "" },
+                            { username: "g7_leader_2", name: "七年级考核组长2", role: "leader", grade: "七年级", subject: "", classes: "" },
+                            { username: "g7_leader_3", name: "七年级考核组长3", role: "leader", grade: "七年级", subject: "", classes: "" },
+                            { username: "g7_leader_4", name: "七年级考核组长4", role: "leader", grade: "七年级", subject: "", classes: "" },
                             { username: "g8_leader_1", name: "八年级考核组长1", role: "leader", grade: "八年级", subject: "", classes: "" },
+                            { username: "g8_leader_2", name: "八年级考核组长2", role: "leader", grade: "八年级", subject: "", classes: "" },
+                            { username: "g8_leader_3", name: "八年级考核组长3", role: "leader", grade: "八年级", subject: "", classes: "" },
+                            { username: "g8_leader_4", name: "八年级考核组长4", role: "leader", grade: "八年级", subject: "", classes: "" },
                             { username: "g9_leader_1", name: "九年级考核组长1", role: "leader", grade: "九年级", subject: "", classes: "" },
                             { username: "g9_leader_2", name: "九年级考核组长2", role: "leader", grade: "九年级", subject: "", classes: "" },
+                            { username: "g9_leader_3", name: "九年级考核组长3", role: "leader", grade: "九年级", subject: "", classes: "" },
+                            { username: "g9_leader_4", name: "九年级考核组长4", role: "leader", grade: "九年级", subject: "", classes: "" },
                             { username: "zhang", name: "张老师", role: "teacher", grade: "六年级", subject: "语文", classes: "1班、2班" },
                             { username: "li", name: "李老师", role: "teacher", grade: "八年级", subject: "数学", classes: "1班、2班" },
                             { username: "wang", name: "王老师", role: "teacher", grade: "九年级", subject: "英语", classes: "3班" }

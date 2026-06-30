@@ -250,7 +250,7 @@
                                     <button @click="downloadUserTemplate" class="text-xs text-china-red hover:underline font-bold"><i class="ti ti-download mr-1"></i>下载模板</button>
                                 </div>
                                 <p class="text-xs text-slate-warm leading-relaxed mb-6">
-                                    批量导入全校管理员、教务主任、考核组长。导入的组长可以在此系统直接登录，填写所负责的项目得分。
+                                    批量导入全校管理员、教研组长、考核组长。导入的组长可以在此系统直接登录，填写所负责的项目得分。
                                 </p>
                             </div>
                             <label class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#D6CAB2] bg-gray-50/50 hover:bg-[#F2ECE0]/30 cursor-pointer transition-all font-bold text-sm">
@@ -329,14 +329,14 @@
                         <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
                             <div>
                                 <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-users-group text-china-red text-xl"></i>人员名单及账号列表</h3>
-                                <p class="text-xs text-slate-warm mt-1">系统内所有账号，包含管理员、教研组长/教务主任、考核组长及教师。</p>
+                                <p class="text-xs text-slate-warm mt-1">系统内所有账号，包含管理员、教研组长、考核组长及教师。</p>
                             </div>
                             <div class="flex gap-2">
                                 <input v-model="userSearchKey" placeholder="搜索姓名/账号" class="input-chinese px-4 py-2 rounded-xl text-xs w-48">
                                 <select v-model="userSearchRole" class="input-chinese px-3 py-2 rounded-xl text-xs">
                                     <option value="">全部角色</option>
                                     <option value="admin">管理员</option>
-                                    <option value="dean">教务主任</option>
+                                    <option value="dean">教研组长</option>
                                     <option value="leader">考核组长</option>
                                     <option value="teacher">被考核教师</option>
                                 </select>
@@ -939,7 +939,7 @@
                 const roleLabel = (role) => {
                     const map = {
                         admin: "系统管理员",
-                        dean: "教务主任",
+                        dean: "教研组长",
                         leader: "考核组长",
                         teacher: "被考核教师"
                     };
@@ -1375,7 +1375,7 @@
 
                 const downloadUserTemplate = () => {
                     const rows = [
-                        { "姓名": "赵主任", "账号": "zhaodean", "密码": "123456", "角色": "教务主任", "年级": "", "学科": "" },
+                        { "姓名": "教研组长", "账号": "research_leader", "密码": "123456", "角色": "教研组长", "年级": "", "学科": "" },
                         { "姓名": "六年级语文组长", "账号": "g6_yw_leader", "密码": "123456", "角色": "考核组长", "年级": "六年级", "学科": "" },
                         { "姓名": "九年级考核组长", "账号": "g9_leader", "密码": "123456", "角色": "考核组长", "年级": "九年级", "学科": "" }
                     ];

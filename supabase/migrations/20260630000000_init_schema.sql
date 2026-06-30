@@ -185,6 +185,10 @@ begin
     email,
     encrypted_password,
     email_confirmed_at,
+    confirmation_token,
+    recovery_token,
+    email_change,
+    email_change_token_new,
     raw_app_meta_data,
     raw_user_meta_data,
     created_at,
@@ -196,16 +200,24 @@ begin
     'authenticated',
     'authenticated',
     email_address,
-    crypt(password_text, gen_salt('bf')),
+    crypt(password_text, gen_salt('bf', 10)),
     now(),
+    '',
+    '',
+    '',
+    '',
     '{"provider":"email","providers":["email"]}',
     jsonb_build_object(
+      'sub', new_user_id::text,
+      'email', email_address,
       'username', username_text,
       'name', full_name_text,
       'role', role_text,
       'grade', grade_text,
       'subject', subject_text,
-      'classes', classes_text
+      'classes', classes_text,
+      'email_verified', true,
+      'phone_verified', false
     ),
     now(),
     now()
@@ -217,15 +229,28 @@ begin
     user_id,
     identity_data,
     provider,
+    provider_id,
     last_sign_in_at,
     created_at,
     updated_at
   )
   values (
-    new_user_id::text,
+    gen_random_uuid(),
     new_user_id,
-    jsonb_build_object('sub', new_user_id, 'email', email_address),
+    jsonb_build_object(
+      'sub', new_user_id::text,
+      'email', email_address,
+      'username', username_text,
+      'name', full_name_text,
+      'role', role_text,
+      'grade', grade_text,
+      'subject', subject_text,
+      'classes', classes_text,
+      'email_verified', true,
+      'phone_verified', false
+    ),
     'email',
+    new_user_id::text,
     now(),
     now(),
     now()
