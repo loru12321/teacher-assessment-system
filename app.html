@@ -562,6 +562,26 @@
                                     </span>
                                 </button>
                                 <div v-show="openedGradePanels[grade]" class="p-6">
+                                    <div class="mb-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                                        <div class="flex flex-wrap gap-2">
+                                            <button @click="applyDefaultAssignmentsForGrade(grade)" class="px-3 py-2 rounded-lg border border-[#D6CAB2] bg-white hover:bg-gray-50 text-xs font-bold text-ink flex items-center gap-1.5 transition-all">
+                                                <i class="ti ti-arrows-shuffle text-china-red"></i>本年级均分
+                                            </button>
+                                            <button @click="clearAssignmentsForGrade(grade)" class="px-3 py-2 rounded-lg border border-[#D6CAB2] bg-white hover:bg-red-50 hover:text-red-600 text-xs font-bold text-slate-warm flex items-center gap-1.5 transition-all">
+                                                <i class="ti ti-eraser"></i>清空本年级
+                                            </button>
+                                        </div>
+                                        <div class="flex flex-wrap gap-2">
+                                            <span v-if="getGradeLeaders(grade).length === 0" class="px-3 py-1.5 rounded-full bg-red-50 text-red-600 text-[11px] font-bold border border-red-100">
+                                                暂无考核组长
+                                            </span>
+                                            <span v-for="item in leaderAssignmentLoad(grade)" :key="item.leader.id"
+                                                  class="px-3 py-1.5 rounded-full text-[11px] font-bold border"
+                                                  :class="item.count === 0 ? 'bg-gray-50 text-slate-warm border-gray-200' : 'bg-blue-50 text-blue-600 border-blue-100'">
+                                                {{ item.leader.full_name }}：{{ item.count }} 项
+                                            </span>
+                                        </div>
+                                    </div>
                                     <!-- Table for project assignments -->
                                     <div class="overflow-x-auto">
                                         <table class="w-full text-left text-xs border-collapse">
@@ -570,7 +590,7 @@
                                                     <th class="py-3 px-4 text-slate-warm font-bold uppercase w-1/4">考核类型</th>
                                                     <th class="py-3 px-4 text-slate-warm font-bold uppercase w-1/3">项目名称</th>
                                                     <th class="py-3 px-4 text-slate-warm font-bold uppercase w-12 text-center">满分</th>
-                                                    <th class="py-3 px-4 text-slate-warm font-bold uppercase">分发给负责考核组长（下拉多选）</th>
+                                                    <th class="py-3 px-4 text-slate-warm font-bold uppercase">分发给负责考核组长</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -1474,6 +1494,18 @@
                     };
                 };
 
+                const leaderAssignmentLoad = (grade) => {
+                    const projects = getGradeProjects(grade);
+                    return getGradeLeaders(grade).map(leader => {
+                        const count = projects.filter(project => tempAssignments.value[grade + '::' + project.id] === leader.id).length;
+                        return {
+                            leader,
+                            count,
+                            percent: projects.length ? Math.round((count / projects.length) * 100) : 0
+                        };
+                    });
+                };
+
                 const toggleGradePanel = (grade) => {
                     openedGradePanels.value[grade] = !openedGradePanels.value[grade];
                 };
@@ -1645,28 +1677,51 @@
                     return PROJECTS.filter(p => projectAppliesToGrade(p, row.grade));
                 };
 
-                const applyDefaultAssignments = () => {
+                const applyDefaultAssignmentsForGrade = (grade, silent = false) => {
+                    const leaders = getGradeLeaders(grade);
+                    const projects = getGradeProjects(grade);
+
+                    if (leaders.length === 0) {
+                        if (!silent) alert(`${grade}暂无考核组长，请先导入该年级考核组长。`);
+                        return 0;
+                    }
+
                     const nextAssignments = { ...tempAssignments.value };
+                    projects.forEach((project, index) => {
+                        const leader = leaders[index % leaders.length];
+                        nextAssignments[grade + '::' + project.id] = leader.id;
+                    });
+                    tempAssignments.value = nextAssignments;
+
+                    if (!silent) {
+                        alert(`${grade}已按 ${leaders.length} 名考核组长均分 ${projects.length} 个项目，请检查后保存。`);
+                    }
+                    return projects.length;
+                };
+
+                const clearAssignmentsForGrade = (grade) => {
+                    if (!confirm(`确认清空 ${grade} 的全部项目分发吗？清空后这些项目将由管理员/教研组长兜底填报，保存后生效。`)) return;
+                    const nextAssignments = { ...tempAssignments.value };
+                    getGradeProjects(grade).forEach(project => {
+                        nextAssignments[grade + '::' + project.id] = '';
+                    });
+                    tempAssignments.value = nextAssignments;
+                };
+
+                const applyDefaultAssignments = () => {
                     const missingGrades = [];
                     let assignedCount = 0;
 
                     grades.forEach(grade => {
                         const leaders = getGradeLeaders(grade);
-                        const projects = getGradeProjects(grade);
 
                         if (leaders.length === 0) {
                             missingGrades.push(grade);
                             return;
                         }
 
-                        projects.forEach((project, index) => {
-                            const leader = leaders[index % leaders.length];
-                            nextAssignments[grade + '::' + project.id] = leader.id;
-                            assignedCount++;
-                        });
+                        assignedCount += applyDefaultAssignmentsForGrade(grade, true);
                     });
-
-                    tempAssignments.value = nextAssignments;
 
                     if (missingGrades.length > 0) {
                         alert(`已生成 ${assignedCount} 个项目分发草案。以下年级暂无考核组长，未生成分发：${missingGrades.join('、')}。请检查后点击“保存项目分发”。`);
@@ -2031,6 +2086,7 @@
                     getGradeProjects,
                     getGradeProjectsCount,
                     assignmentProgress,
+                    leaderAssignmentLoad,
                     toggleGradePanel,
                     getGradeLeaders,
                     projectGroupLabel,
@@ -2044,6 +2100,8 @@
                     summaryRows,
                     getTeacherApplicableProjects,
                     
+                    applyDefaultAssignmentsForGrade,
+                    clearAssignmentsForGrade,
                     applyDefaultAssignments,
                     saveAssignments,
                     saveVisibleScores,
