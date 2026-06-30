@@ -286,6 +286,18 @@
                             </p>
                         </div>
                     </div>
+                    <div class="rounded-xl border border-[#D6CAB2] bg-white px-4 py-3 xl:min-w-[260px]">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="text-[11px] font-extrabold text-slate-warm">消息提醒</p>
+                                <p class="text-xs font-bold text-ink mt-1">未读 {{ unreadNotifications.length }} 条</p>
+                            </div>
+                            <button @click="showNotifications = !showNotifications"
+                                    class="px-3 py-2 rounded-lg border border-[#D6CAB2] hover:bg-gray-50 text-xs font-extrabold flex items-center gap-1.5">
+                                <i class="ti ti-bell"></i>{{ showNotifications ? '收起' : '查看' }}
+                            </button>
+                        </div>
+                    </div>
                     <div v-if="isAdminLike" class="rounded-xl border border-[#D6CAB2] bg-white px-4 py-3 xl:min-w-[250px]">
                         <p class="text-[11px] font-extrabold text-slate-warm">组长填报控制</p>
                         <div class="mt-2 flex items-center justify-between gap-3">
@@ -307,6 +319,33 @@
                             </button>
                         </div>
                         <p class="text-[11px] text-slate-warm mt-2">只控制考核组长填报；管理员和教务主任仍可查看、兜底管理。</p>
+                    </div>
+                </section>
+
+                <section v-if="showNotifications" class="premium-card p-5">
+                    <div class="flex items-center justify-between gap-3 mb-4">
+                        <div>
+                            <h3 class="text-sm font-extrabold text-ink flex items-center gap-2"><i class="ti ti-bell text-china-red"></i>消息中心</h3>
+                            <p class="text-xs text-slate-warm mt-1">填写开启/结束、数据更改、完成提交都会在这里提醒。</p>
+                        </div>
+                        <button @click="markNotificationsRead" :disabled="unreadNotifications.length === 0"
+                                class="px-3 py-2 rounded-lg bg-ink text-white disabled:opacity-50 disabled:cursor-not-allowed text-xs font-extrabold">
+                            全部已读
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 max-h-80 overflow-y-auto">
+                        <div v-for="item in notifications" :key="item.id"
+                             class="rounded-xl border p-4"
+                             :class="item.read_at ? 'border-[#D6CAB2] bg-white' : 'border-china-red bg-red-50/70'">
+                            <div class="flex items-start justify-between gap-3">
+                                <p class="text-sm font-extrabold text-ink">{{ item.title }}</p>
+                                <span class="text-[10px] text-slate-warm font-bold shrink-0">{{ formatShortDate(item.created_at) }}</span>
+                            </div>
+                            <p class="text-xs text-slate-warm leading-relaxed mt-2">{{ item.body }}</p>
+                        </div>
+                        <div v-if="notifications.length === 0" class="rounded-xl border border-dashed border-[#D6CAB2] p-6 text-center text-sm font-bold text-slate-warm">
+                            暂无消息。
+                        </div>
                     </div>
                 </section>
                 
@@ -927,7 +966,9 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="teacher in applicableTeachersForSelectedProject" :key="teacher.id" class="border-b border-gray-100 hover:bg-gray-50/30">
+                                    <tr v-for="teacher in applicableTeachersForSelectedProject" :key="teacher.id"
+                                        class="border-b border-gray-100 hover:bg-gray-50/30"
+                                        :class="scoreChangeClass(getScoreRecord(teacher.id, selectedProjectEntry.project.id))">
                                         <td class="py-3.5 px-5 font-bold text-ink">{{ teacher.full_name }}</td>
                                         <td class="py-3.5 px-5 font-semibold text-slate-warm">{{ teacher.grade }}</td>
                                         <td class="py-3.5 px-5 font-semibold text-slate-warm">{{ teacher.subject }}</td>
@@ -950,9 +991,17 @@
                                                   class="px-2.5 py-0.5 rounded-full text-[10px] font-bold">
                                                 {{ scoreStatusLabel(getScoreRecord(teacher.id, selectedProjectEntry.project.id)?.status) }}
                                             </span>
+                                            <p v-if="getScoreRecord(teacher.id, selectedProjectEntry.project.id)?.change_tag"
+                                               class="text-[10px] font-extrabold text-amber-700 mt-1">
+                                                {{ scoreChangeLabel(getScoreRecord(teacher.id, selectedProjectEntry.project.id)) }}
+                                            </p>
                                         </td>
                                         <td class="py-3.5 px-5 text-center font-semibold text-slate-warm">
                                             {{ getScoreRecord(teacher.id, selectedProjectEntry.project.id)?.scorer_name || '-' }}
+                                            <p v-if="getScoreRecord(teacher.id, selectedProjectEntry.project.id)?.change_tag"
+                                               class="text-[10px] text-slate-warm mt-1 leading-relaxed">
+                                                {{ scoreChangeNote(getScoreRecord(teacher.id, selectedProjectEntry.project.id)) }}
+                                            </p>
                                         </td>
                                     </tr>
                                     <tr v-if="applicableTeachersForSelectedProject.length === 0">
@@ -1169,7 +1218,8 @@
                                                 </div>
                                                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 flex-1">
                                                     <div v-for="project in getTeacherApplicableProjects(row)" :key="project.id"
-                                                         class="rounded-lg border border-[#D6CAB2] bg-white p-3">
+                                                         class="rounded-lg border bg-white p-3"
+                                                         :class="scoreChangeClass(row.scores[project.id]) || 'border-[#D6CAB2]'">
                                                         <div class="flex items-center justify-between gap-2">
                                                             <span class="text-xs font-extrabold text-ink truncate" :title="project.name">{{ project.name }}</span>
                                                             <span :class="scoreStatusBadgeClass(row.scores[project.id]?.status)" class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0">
@@ -1185,6 +1235,10 @@
                                                         </div>
                                                         <p class="text-[11px] text-slate-warm mt-2 leading-relaxed max-h-8 overflow-hidden">
                                                             {{ row.scores[project.id]?.note || '暂无填报依据或备注' }}
+                                                        </p>
+                                                        <p v-if="row.scores[project.id]?.change_tag"
+                                                           class="text-[11px] font-extrabold text-amber-700 mt-2 leading-relaxed">
+                                                            {{ scoreChangeLabel(row.scores[project.id]) }}：{{ scoreChangeNote(row.scores[project.id]) }}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -1275,7 +1329,9 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="project in getTeacherApplicableProjects(targetTeacherRow)" :key="project.id" class="border-b border-gray-100 hover:bg-gray-50/50">
+                                    <tr v-for="project in getTeacherApplicableProjects(targetTeacherRow)" :key="project.id"
+                                        class="border-b border-gray-100 hover:bg-gray-50/50"
+                                        :class="scoreChangeClass(targetTeacherRow.scores[project.id])">
                                         <td class="py-3.5 px-5 font-bold text-gray-400">{{ projectGroupLabel(project) }}</td>
                                         <td class="py-3.5 px-5">
                                             <p class="font-bold text-ink">{{ project.name }}</p>
@@ -1289,9 +1345,17 @@
                                             <span :class="scoreStatusBadgeClass(targetTeacherRow.scores[project.id]?.status)" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold">
                                                 {{ scoreStatusLabel(targetTeacherRow.scores[project.id]?.status) }}
                                             </span>
+                                            <p v-if="targetTeacherRow.scores[project.id]?.change_tag"
+                                               class="text-[10px] font-extrabold text-amber-700 mt-1">
+                                                {{ scoreChangeLabel(targetTeacherRow.scores[project.id]) }}
+                                            </p>
                                         </td>
                                         <td class="py-3.5 px-5 font-medium text-slate-warm max-w-sm whitespace-normal leading-relaxed">
                                             {{ targetTeacherRow.scores[project.id]?.note || '-' }}
+                                            <p v-if="targetTeacherRow.scores[project.id]?.change_tag"
+                                               class="text-[11px] font-extrabold text-amber-700 mt-1">
+                                                批注：{{ scoreChangeNote(targetTeacherRow.scores[project.id]) }}
+                                            </p>
                                         </td>
                                         <td class="py-3.5 px-5 font-semibold text-slate-warm">
                                             {{ targetTeacherRow.scores[project.id]?.scorer_name || '-' }}
@@ -1506,6 +1570,7 @@
                 const users = ref([]);
                 const yearPeople = ref([]);
                 const fillControls = ref([]);
+                const notifications = ref([]);
                 const projectAssignments = ref([]);
                 const assessmentScores = ref([]);
                 
@@ -1550,6 +1615,7 @@
                 const filterKeyword = ref('');
                 const filterStatus = ref('');
                 const expandedSummaryTeacherId = ref('');
+                const showNotifications = ref(false);
                 
                 // Teacher view state
                 const teacherViewId = ref('');
@@ -1607,6 +1673,10 @@
                     return isLeaderFillOpen.value;
                 });
 
+                const unreadNotifications = computed(() => {
+                    return notifications.value.filter(item => !item.read_at);
+                });
+
                 const yearModeText = computed(() => {
                     if (canEditSelectedYear.value) return '当前可填报';
                     if (isAnnualFillWindow.value) return `仅 ${currentFillAcademicYear.value} 可填报`;
@@ -1658,10 +1728,61 @@
                             .upsert(payload, { onConflict: 'academic_year' });
                         if (error) throw error;
 
+                        await createNotifications(getAllLeaders().map(leader => ({
+                            recipient_id: leader.id,
+                            title: open ? '年度考核已开始填写' : '年度考核已结束填写',
+                            body: open
+                                ? `${selectedAcademicYear.value} 学年度考核已由 ${currentUser.value.full_name} 开始，考核组长可以进入系统填报负责项目。`
+                                : `${selectedAcademicYear.value} 学年度考核已由 ${currentUser.value.full_name} 结束，考核组长端保存和提交已锁定。`,
+                            event_type: open ? 'fill_opened' : 'fill_closed'
+                        })));
+
                         await loadAllData();
                         alert(open ? '已开始填写，考核组长现在可以填报。' : '已结束填写，考核组长端已锁定。');
                     } catch (e) {
                         alert('填报控制更新失败: ' + e.message);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                const formatShortDate = (value) => {
+                    if (!value) return '';
+                    const date = new Date(value);
+                    if (Number.isNaN(date.getTime())) return '';
+                    return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                };
+
+                const createNotifications = async (items) => {
+                    const payload = items.filter(Boolean).map(item => ({
+                        academic_year: selectedAcademicYear.value,
+                        recipient_id: item.recipient_id || null,
+                        recipient_role: item.recipient_role || null,
+                        title: item.title,
+                        body: item.body,
+                        event_type: item.event_type || 'system',
+                        related_teacher_id: item.related_teacher_id || null,
+                        related_project_id: item.related_project_id || null,
+                        created_by: currentUser.value?.id || null
+                    }));
+                    if (payload.length === 0) return;
+                    const { error } = await sbClient.from('notifications').insert(payload);
+                    if (error) throw error;
+                };
+
+                const markNotificationsRead = async () => {
+                    const unreadIds = unreadNotifications.value.map(item => item.id);
+                    if (unreadIds.length === 0) return;
+                    setLoading(true, '正在标记消息已读...');
+                    try {
+                        const { error } = await sbClient
+                            .from('notifications')
+                            .update({ read_at: new Date().toISOString() })
+                            .in('id', unreadIds);
+                        if (error) throw error;
+                        await loadAllData();
+                    } catch (e) {
+                        alert('消息状态更新失败: ' + e.message);
                     } finally {
                         setLoading(false);
                     }
@@ -1742,6 +1863,16 @@
                             .eq('academic_year', selectedAcademicYear.value);
                         if (fcError) throw fcError;
                         fillControls.value = fillControlList || [];
+
+                        const { data: notificationList, error: nError } = await sbClient
+                            .from('notifications')
+                            .select('*')
+                            .eq('academic_year', selectedAcademicYear.value)
+                            .or(`recipient_id.eq.${currentUser.value.id},recipient_role.eq.${currentUser.value.role},recipient_role.eq.all`)
+                            .order('created_at', { ascending: false })
+                            .limit(80);
+                        if (nError) throw nError;
+                        notifications.value = notificationList || [];
 
                         const profileById = new Map((profilesList || []).map(profile => [profile.id, profile]));
                         const scopedUsers = new Map();
@@ -1865,6 +1996,29 @@
                     if (status === 'submitted') return '已提交';
                     if (status === 'draft') return '草稿';
                     return '缺项';
+                };
+
+                const scoreChangeClass = (record) => {
+                    if (!record?.change_tag) return '';
+                    if (record.change_tag === 'admin_override') return 'bg-purple-50 border-purple-300';
+                    if (record.change_tag === 'leader_revised') return 'bg-amber-50 border-amber-300';
+                    if (record.change_tag === 'completed') return 'bg-green-50 border-green-300';
+                    return 'bg-blue-50 border-blue-200';
+                };
+
+                const scoreChangeLabel = (record) => {
+                    if (!record?.change_tag) return '';
+                    if (record.change_tag === 'admin_override') return '管理员/主任更改';
+                    if (record.change_tag === 'leader_revised') return '组长复改';
+                    if (record.change_tag === 'completed') return '完成提交';
+                    return '数据变更';
+                };
+
+                const scoreChangeNote = (record) => {
+                    if (!record?.change_tag) return '';
+                    const before = record.previous_score !== null && record.previous_score !== undefined ? `原 ${record.previous_score}` : '原未提交';
+                    const after = record.score !== null && record.score !== undefined ? `现 ${record.score}` : '现未录入';
+                    return record.change_note || `${before}，${after}`;
                 };
 
                 const normalizeGrade = (grade) => {
@@ -2069,6 +2223,14 @@
                 };
 
                 // Leaders residing in specific grades
+                const getAllLeaders = () => {
+                    return users.value.filter(u => u.role === 'leader');
+                };
+
+                const getAllAdminsAndDeans = () => {
+                    return users.value.filter(u => u.role === 'admin' || u.role === 'dean');
+                };
+
                 const getGradeLeaders = (grade) => {
                     const normalized = normalizeGrade(grade);
                     return users.value.filter(u => u.role === 'leader' && normalizeGrade(u.grade) === normalized);
@@ -2347,7 +2509,17 @@
                         applicable.forEach(p => {
                             const rec = getScoreRecord(teacher.id, p.id);
                             if (rec && rec.status === 'submitted') {
-                                scoresObj[p.id] = { score: Number(rec.score || 0), status: rec.status, note: rec.note };
+                                scoresObj[p.id] = {
+                                    score: Number(rec.score || 0),
+                                    status: rec.status,
+                                    note: rec.note,
+                                    scorer_name: rec.scorer_name,
+                                    change_tag: rec.change_tag,
+                                    change_note: rec.change_note,
+                                    previous_score: rec.previous_score,
+                                    previous_note: rec.previous_note,
+                                    change_count: rec.change_count
+                                };
                                 if (p.group === 'teacher') {
                                     teacherTotal += Number(rec.score || 0);
                                 } else {
@@ -2554,10 +2726,24 @@
                     setLoading(true, status === 'submitted' ? '正在提交项目评分...' : '正在保存评分草稿...');
                     try {
                         const payload = [];
+                        const notificationPayload = [];
                         applicableTeachersForSelectedProject.value.forEach(teacher => {
                             const key = teacher.id + '::' + entry.project.id;
                             const scoreVal = tempScores.value[key];
                             const noteVal = tempNotes.value[key] || '';
+                            const existing = getScoreRecord(teacher.id, entry.project.id);
+                            const oldScore = existing?.score !== null && existing?.score !== undefined ? Number(existing.score) : null;
+                            const newScore = scoreVal !== '' ? Number(scoreVal) : null;
+                            const oldNote = existing?.note || '';
+                            const hasSubmittedBefore = existing?.status === 'submitted';
+                            const changed = hasSubmittedBefore && status === 'submitted' && (oldScore !== newScore || oldNote !== noteVal);
+                            const isAdminChange = changed && isAdminLike.value;
+                            const isLeaderRevision = changed && currentUser.value.role === 'leader';
+                            const isCompleted = !hasSubmittedBefore && status === 'submitted' && newScore !== null;
+                            const changeTag = isAdminChange ? 'admin_override' : (isLeaderRevision ? 'leader_revised' : (isCompleted ? 'completed' : (existing?.change_tag || null)));
+                            const changeNote = changed
+                                ? `${currentUser.value.full_name} 将 ${teacher.full_name} 的「${entry.project.name}」由 ${oldScore ?? '未提交'} 分改为 ${newScore ?? '未录入'} 分。`
+                                : (isCompleted ? `${teacher.full_name} 的「${entry.project.name}」已完成提交。` : (existing?.change_note || null));
                             
                             // Check if score is entered (allow empty for drafts, enforce for submissions)
                             if (status === 'submitted' && (scoreVal === '' || scoreVal === undefined)) {
@@ -2568,13 +2754,47 @@
                                 academic_year: selectedAcademicYear.value,
                                 teacher_id: teacher.id,
                                 project_id: entry.project.id,
-                                score: scoreVal !== '' ? Number(scoreVal) : null,
+                                score: newScore,
                                 note: noteVal,
                                 status,
                                 scorer_id: currentUser.value.id,
                                 scorer_name: currentUser.value.full_name,
+                                change_tag: changeTag,
+                                change_note: changeNote,
+                                previous_score: changed ? oldScore : (existing?.previous_score ?? null),
+                                previous_note: changed ? oldNote : (existing?.previous_note ?? null),
+                                change_count: changed ? Number(existing?.change_count || 0) + 1 : Number(existing?.change_count || 0),
                                 updated_at: new Date().toISOString()
                             });
+
+                            if (isAdminChange && existing?.scorer_id && existing.scorer_id !== currentUser.value.id) {
+                                notificationPayload.push({
+                                    recipient_id: existing.scorer_id,
+                                    title: '评分数据被管理员/主任更改',
+                                    body: changeNote,
+                                    event_type: 'admin_score_changed',
+                                    related_teacher_id: teacher.id,
+                                    related_project_id: entry.project.id
+                                });
+                            }
+
+                            if (isLeaderRevision) {
+                                notificationPayload.push(
+                                    { recipient_role: 'admin', title: '组长复改已提交数据', body: changeNote, event_type: 'leader_score_revised', related_teacher_id: teacher.id, related_project_id: entry.project.id },
+                                    { recipient_role: 'dean', title: '组长复改已提交数据', body: changeNote, event_type: 'leader_score_revised', related_teacher_id: teacher.id, related_project_id: entry.project.id }
+                                );
+                            }
+
+                            if ((isAdminChange || isLeaderRevision || isCompleted) && teacher.id !== currentUser.value.id) {
+                                notificationPayload.push({
+                                    recipient_id: teacher.id,
+                                    title: isCompleted ? '你的考核项目已提交' : '你的考核分数有变更',
+                                    body: changeNote,
+                                    event_type: isCompleted ? 'score_completed' : 'score_changed',
+                                    related_teacher_id: teacher.id,
+                                    related_project_id: entry.project.id
+                                });
+                            }
                         });
 
                         if (status === 'submitted' && !confirmLeaderFinalSubmissionIfNeeded(entry)) {
@@ -2586,6 +2806,8 @@
                             .upsert(payload, { onConflict: 'academic_year,teacher_id,project_id' });
                             
                         if (error) throw error;
+
+                        await createNotifications(notificationPayload);
                         
                         await loadAllData();
                         alert(status === 'submitted' ? '项目评分提交成功，已推送至管理员汇总！' : '草稿保存成功！');
@@ -2781,6 +3003,7 @@
                             if (projectAppliesToGrade(p, row.grade)) {
                                 item[`师评-${p.name}得分`] = row.scores[p.id]?.score !== undefined ? row.scores[p.id].score : '未录入';
                                 item[`师评-${p.name}备注`] = row.scores[p.id]?.note || '';
+                                item[`师评-${p.name}变更说明`] = row.scores[p.id]?.change_tag ? `${scoreChangeLabel(row.scores[p.id])}：${scoreChangeNote(row.scores[p.id])}` : '';
                             } else {
                                 item[`师评-${p.name}得分`] = '不适用';
                             }
@@ -2790,6 +3013,7 @@
                             if (projectAppliesToGrade(p, row.grade)) {
                                 item[`班评-${p.name}得分`] = row.scores[p.id]?.score !== undefined ? row.scores[p.id].score : '未录入';
                                 item[`班评-${p.name}备注`] = row.scores[p.id]?.note || '';
+                                item[`班评-${p.name}变更说明`] = row.scores[p.id]?.change_tag ? `${scoreChangeLabel(row.scores[p.id])}：${scoreChangeNote(row.scores[p.id])}` : '';
                             } else {
                                 item[`班评-${p.name}得分`] = '不适用';
                             }
@@ -2836,9 +3060,14 @@
                     canScoreSelectedYear,
                     isLeaderFillOpen,
                     fillControlStatusText,
+                    notifications,
+                    unreadNotifications,
+                    showNotifications,
                     yearModeText,
                     handleAcademicYearChange,
                     updateFillControl,
+                    markNotificationsRead,
+                    formatShortDate,
                     retryLoad,
                     openWorkspace,
                     isAdminLike,
@@ -2896,6 +3125,9 @@
                     roleBadgeClass,
                     scoreStatusBadgeClass,
                     scoreStatusLabel,
+                    scoreChangeClass,
+                    scoreChangeLabel,
+                    scoreChangeNote,
                     gradeStage,
                     projectAppliesToGrade,
                     getGradeProjects,
