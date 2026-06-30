@@ -699,14 +699,52 @@
 
                         <!-- Current Project Banner Info -->
                         <div v-if="selectedProjectEntry" class="bg-gray-50 border border-[#D6CAB2] rounded-xl p-4 mb-6">
-                            <h4 class="text-sm font-extrabold text-ink flex items-center gap-2">
-                                <i class="ti ti-info-circle text-china-red"></i>
-                                {{ selectedProjectEntry.grade }} · {{ selectedProjectEntry.project.name }}
-                                <span class="px-2 py-0.5 rounded-full text-[10px] bg-china-red/10 text-china-red font-bold">
-                                    最高分 {{ selectedProjectEntry.project.max }} 分
-                                </span>
-                            </h4>
-                            <p class="text-xs text-slate-warm leading-relaxed mt-1.5">{{ selectedProjectEntry.project.desc }}</p>
+                            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                                <div class="min-w-0">
+                                    <h4 class="text-sm font-extrabold text-ink flex items-center gap-2 flex-wrap">
+                                        <i class="ti ti-info-circle text-china-red"></i>
+                                        {{ selectedProjectEntry.grade }} · {{ selectedProjectEntry.project.name }}
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] bg-china-red/10 text-china-red font-bold">
+                                            最高分 {{ selectedProjectEntry.project.max }} 分
+                                        </span>
+                                    </h4>
+                                    <p class="text-xs text-slate-warm leading-relaxed mt-1.5">{{ selectedProjectEntry.project.desc }}</p>
+                                </div>
+                                <div class="flex flex-wrap gap-2">
+                                    <button @click="fillMissingScoresWithMax" class="px-3 py-2 rounded-lg border border-[#D6CAB2] bg-white hover:bg-gray-50 text-xs font-bold text-ink flex items-center gap-1.5 transition-all">
+                                        <i class="ti ti-select text-china-red"></i>缺项填满分
+                                    </button>
+                                    <button @click="fillAllScoresWithMax" class="px-3 py-2 rounded-lg border border-[#D6CAB2] bg-white hover:bg-gray-50 text-xs font-bold text-ink flex items-center gap-1.5 transition-all">
+                                        <i class="ti ti-star text-china-red"></i>全部填满分
+                                    </button>
+                                    <button @click="clearVisibleScoreInputs" class="px-3 py-2 rounded-lg border border-[#D6CAB2] bg-white hover:bg-red-50 hover:text-red-600 text-xs font-bold text-slate-warm flex items-center gap-1.5 transition-all">
+                                        <i class="ti ti-eraser"></i>清空当前填写
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+                                <div class="rounded-lg bg-white border border-[#D6CAB2] p-3">
+                                    <p class="text-[11px] text-slate-warm font-bold">应填教师</p>
+                                    <p class="text-lg font-extrabold text-ink mt-1">{{ selectedProjectScoreStats.total }} 人</p>
+                                </div>
+                                <div class="rounded-lg bg-white border border-[#D6CAB2] p-3">
+                                    <p class="text-[11px] text-slate-warm font-bold">已输入</p>
+                                    <p class="text-lg font-extrabold text-blue-600 mt-1">{{ selectedProjectScoreStats.filled }} 人</p>
+                                </div>
+                                <div class="rounded-lg bg-white border border-[#D6CAB2] p-3">
+                                    <p class="text-[11px] text-slate-warm font-bold">未输入</p>
+                                    <p class="text-lg font-extrabold text-amber-700 mt-1">{{ selectedProjectScoreStats.missing }} 人</p>
+                                </div>
+                                <div class="rounded-lg bg-white border border-[#D6CAB2] p-3">
+                                    <div class="flex items-center justify-between">
+                                        <p class="text-[11px] text-slate-warm font-bold">填写进度</p>
+                                        <span class="text-[11px] font-extrabold text-china-red">{{ selectedProjectScoreStats.percent }}%</span>
+                                    </div>
+                                    <div class="mt-2 h-2 rounded-full bg-gray-100 overflow-hidden">
+                                        <div class="h-full rounded-full bg-china-red transition-all" :style="{ width: selectedProjectScoreStats.percent + '%' }"></div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Scores Table -->
@@ -1546,6 +1584,24 @@
                     return teachers.value.filter(t => normalizeGrade(t.grade) === grade);
                 });
 
+                const selectedProjectScoreStats = computed(() => {
+                    const entry = selectedProjectEntry.value;
+                    if (!entry) {
+                        return { total: 0, filled: 0, missing: 0, percent: 0 };
+                    }
+                    const total = applicableTeachersForSelectedProject.value.length;
+                    const filled = applicableTeachersForSelectedProject.value.filter(teacher => {
+                        const value = tempScores.value[teacher.id + '::' + entry.project.id];
+                        return value !== '' && value !== undefined && value !== null && !Number.isNaN(Number(value));
+                    }).length;
+                    return {
+                        total,
+                        filled,
+                        missing: Math.max(total - filled, 0),
+                        percent: total ? Math.round((filled / total) * 100) : 0
+                    };
+                });
+
                 // Lookup a score record
                 const getScoreRecord = (teacherId, projectId) => {
                     return assessmentScores.value.find(s => s.teacher_id === teacherId && s.project_id === projectId) || null;
@@ -1562,6 +1618,39 @@
                     } else {
                         tempScores.value[key] = Math.min(Math.max(num, 0), project.max);
                     }
+                };
+
+                const fillScoresWithMax = (mode = 'missing') => {
+                    const entry = selectedProjectEntry.value;
+                    if (!entry) return;
+                    applicableTeachersForSelectedProject.value.forEach(teacher => {
+                        const key = teacher.id + '::' + entry.project.id;
+                        const currentValue = tempScores.value[key];
+                        const isMissing = currentValue === '' || currentValue === undefined || currentValue === null;
+                        if (mode === 'all' || isMissing) {
+                            tempScores.value[key] = entry.project.max;
+                        }
+                    });
+                };
+
+                const fillMissingScoresWithMax = () => {
+                    fillScoresWithMax('missing');
+                };
+
+                const fillAllScoresWithMax = () => {
+                    if (!confirm('确认将当前项目下所有教师分值填为满分吗？这只修改当前页面输入，保存或提交后才会写入系统。')) return;
+                    fillScoresWithMax('all');
+                };
+
+                const clearVisibleScoreInputs = () => {
+                    const entry = selectedProjectEntry.value;
+                    if (!entry) return;
+                    if (!confirm('确认清空当前项目下所有教师的页面输入吗？保存后才会覆盖云端数据。')) return;
+                    applicableTeachersForSelectedProject.value.forEach(teacher => {
+                        const key = teacher.id + '::' + entry.project.id;
+                        tempScores.value[key] = '';
+                        tempNotes.value[key] = '';
+                    });
                 };
 
                 // Count stats
@@ -2093,8 +2182,12 @@
                     assignedProjectEntries,
                     selectedProjectEntry,
                     applicableTeachersForSelectedProject,
+                    selectedProjectScoreStats,
                     getScoreRecord,
                     validateClampedScore,
+                    fillMissingScoresWithMax,
+                    fillAllScoresWithMax,
+                    clearVisibleScoreInputs,
                     submittedScoresCount,
                     missingTeachersCount,
                     summaryRows,
