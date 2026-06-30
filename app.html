@@ -251,6 +251,42 @@
 
             <!-- Main Panel -->
             <main class="flex-grow p-6 lg:p-8 flex flex-col gap-6 max-w-7xl mx-auto w-full overflow-x-hidden">
+
+                <!-- Academic Year Control -->
+                <section class="premium-card p-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+                    <div class="flex items-start gap-4">
+                        <span class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl shrink-0">
+                            <i class="ti ti-calendar-stats"></i>
+                        </span>
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h2 class="text-lg font-black text-ink">学年度考核</h2>
+                                <span class="px-2.5 py-1 rounded-full text-xs font-extrabold border"
+                                      :class="canEditSelectedYear ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'">
+                                    {{ yearModeText }}
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-warm mt-1 leading-relaxed">
+                                每个学年度独立维护教师、考核组长、项目分发和评分记录；教师与组长可切换查看自己的历史填报与成绩。
+                            </p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-[minmax(180px,220px)_1fr] gap-3 xl:min-w-[520px]">
+                        <label class="block">
+                            <span class="text-[11px] font-extrabold text-slate-warm">当前学年度</span>
+                            <select v-model="selectedAcademicYear" @change="handleAcademicYearChange"
+                                    class="mt-1 w-full rounded-xl border border-[#D6CAB2] bg-white px-3 py-2.5 text-sm font-bold outline-none focus:ring-2 focus:ring-china-red/20">
+                                <option v-for="year in academicYearOptions" :key="year" :value="year">{{ year }}</option>
+                            </select>
+                        </label>
+                        <div class="rounded-xl bg-gray-50 border border-[#D6CAB2] px-4 py-3">
+                            <p class="text-[11px] font-extrabold text-slate-warm">填报规则</p>
+                            <p class="text-xs font-bold text-ink mt-1">
+                                每年 7、8 月只能填写 {{ currentFillAcademicYear }} 学年度；其他月份默认进入最近一次 7、8 月填报的数据，只读查看。
+                            </p>
+                        </div>
+                    </div>
+                </section>
                 
                 <!-- Header Stats Cards Banner -->
                 <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -481,7 +517,7 @@
                             <label class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#D6CAB2] bg-gray-50/50 hover:bg-[#F2ECE0]/30 cursor-pointer transition-all font-bold text-sm">
                                 <i class="ti ti-upload"></i>
                                 <span>选择 Excel 并导入教师</span>
-                                <input type="file" accept=".xlsx,.xls" class="hidden" @change="e => handleImportExcel(e, 'teacher')">
+                                <input type="file" accept=".xlsx,.xls" class="hidden" :disabled="!canEditSelectedYear" @change="e => handleImportExcel(e, 'teacher')">
                             </label>
                         </div>
                         
@@ -514,7 +550,7 @@
                             <label class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#D6CAB2] bg-gray-50/50 hover:bg-[#F2ECE0]/30 cursor-pointer transition-all font-bold text-sm">
                                 <i class="ti ti-upload"></i>
                                 <span>选择 Excel 并导入账号</span>
-                                <input type="file" accept=".xlsx,.xls" class="hidden" @change="e => handleImportExcel(e, 'user')">
+                                <input type="file" accept=".xlsx,.xls" class="hidden" :disabled="!canEditSelectedYear" @change="e => handleImportExcel(e, 'user')">
                             </label>
                         </div>
                     </div>
@@ -531,7 +567,7 @@
                                     <i class="ti ti-wand text-china-red"></i>
                                     <span>生成默认分发</span>
                                 </button>
-                                <button @click="saveAssignments" class="bg-china-red hover:bg-[#7D2E3E] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5 transition-all">
+                                <button @click="saveAssignments" :disabled="!canEditSelectedYear" class="bg-china-red hover:bg-[#7D2E3E] disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5 transition-all">
                                     <i class="ti ti-device-floppy"></i>
                                     <span>保存项目分发</span>
                                 </button>
@@ -698,7 +734,7 @@
                                 </div>
                                 <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
                                     <p class="text-[11px] text-slate-warm">权限层级：管理员 > 教务主任 > 考核组长 > 被考核教师。只能修改低于自己权限的账号；被考核教师只查看个人各项分数、总分和排名。</p>
-                                    <button @click="saveUserEditForm" class="bg-china-red hover:bg-[#7D2E3E] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5">
+                                    <button @click="saveUserEditForm" :disabled="!canEditSelectedYear" class="bg-china-red hover:bg-[#7D2E3E] disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5">
                                         <i class="ti ti-device-floppy"></i>保存账号与权限
                                     </button>
                                 </div>
@@ -899,10 +935,10 @@
 
                         <!-- Actions Buttons -->
                         <div v-if="selectedProjectEntry && applicableTeachersForSelectedProject.length > 0" class="flex justify-end gap-3 mt-6 border-t border-gray-100 pt-4">
-                            <button @click="saveVisibleScores('draft')" class="px-5 py-2.5 border border-[#D6CAB2] hover:bg-[#F2ECE0]/20 rounded-xl font-bold text-sm transition-all text-slate-warm">
+                            <button @click="saveVisibleScores('draft')" :disabled="!canEditSelectedYear" class="px-5 py-2.5 border border-[#D6CAB2] hover:bg-[#F2ECE0]/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-sm transition-all text-slate-warm">
                                 <i class="ti ti-save mr-1"></i>保存为草稿
                             </button>
-                            <button @click="saveVisibleScores('submitted')" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-1.5 shadow-md shadow-green-100">
+                            <button @click="saveVisibleScores('submitted')" :disabled="!canEditSelectedYear" class="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-1.5 shadow-md shadow-green-100">
                                 <i class="ti ti-circle-check"></i>提交本项目
                             </button>
                         </div>
@@ -1401,6 +1437,28 @@
             { id: "class_high_score_grad", group: "class", stage: "毕业年级", name: "高分段贡献", max: 15, desc: "毕业年级班级考核项目，按总分550分以上人数与最高班级相比折算。" }
         ];
 
+        const getFillAcademicYearForDate = (date = new Date()) => {
+            const year = date.getFullYear();
+            const month = date.getMonth() + 1;
+            if (month <= 6) return `${year - 2}-${year - 1}`;
+            return `${year - 1}-${year}`;
+        };
+
+        const getCurrentFillAcademicYear = (date = new Date()) => {
+            const year = date.getFullYear();
+            return `${year - 1}-${year}`;
+        };
+
+        const generateAcademicYearOptions = (baseYearText) => {
+            const currentYear = new Date().getFullYear();
+            const options = [];
+            for (let start = currentYear - 5; start <= currentYear + 1; start++) {
+                options.push(`${start}-${start + 1}`);
+            }
+            if (baseYearText && !options.includes(baseYearText)) options.push(baseYearText);
+            return [...new Set(options)].sort().reverse();
+        };
+
         createApp({
             setup() {
                 const isLoading = ref(false);
@@ -1413,8 +1471,11 @@
                 const settingsSubTab = ref('status');
                 const currentUser = ref(null);
                 const dbError = ref('');
+                const defaultAcademicYear = getFillAcademicYearForDate();
+                const selectedAcademicYear = ref(defaultAcademicYear);
                 
                 const users = ref([]);
+                const yearPeople = ref([]);
                 const projectAssignments = ref([]);
                 const assessmentScores = ref([]);
                 
@@ -1473,6 +1534,42 @@
                 const retryLoad = () => {
                     dbError.value = '';
                     checkSession();
+                };
+
+                const isAnnualFillWindow = computed(() => {
+                    const month = new Date().getMonth() + 1;
+                    return month === 7 || month === 8;
+                });
+
+                const currentFillAcademicYear = computed(() => getCurrentFillAcademicYear());
+
+                const canEditSelectedYear = computed(() => {
+                    return isAnnualFillWindow.value && selectedAcademicYear.value === currentFillAcademicYear.value;
+                });
+
+                const academicYearOptions = computed(() => {
+                    const fromData = [
+                        ...yearPeople.value.map(item => item.academic_year),
+                        ...projectAssignments.value.map(item => item.academic_year),
+                        ...assessmentScores.value.map(item => item.academic_year)
+                    ].filter(Boolean);
+                    return [...new Set([...generateAcademicYearOptions(selectedAcademicYear.value), ...fromData])].sort().reverse();
+                });
+
+                const yearModeText = computed(() => {
+                    if (canEditSelectedYear.value) return '当前可填报';
+                    if (isAnnualFillWindow.value) return `仅 ${currentFillAcademicYear.value} 可填报`;
+                    return '非填报月份，仅可查看历史';
+                });
+
+                const ensureYearEditable = (actionText = '保存') => {
+                    if (canEditSelectedYear.value) return true;
+                    alert(`${actionText}已锁定：系统只允许每年 7、8 月填写当年度考核表。当前可填报年度为 ${currentFillAcademicYear.value}，你正在查看 ${selectedAcademicYear.value}。`);
+                    return false;
+                };
+
+                const handleAcademicYearChange = async () => {
+                    if (currentUser.value) await loadAllData();
                 };
 
                 const openWorkspace = (tab, subTab = '') => {
@@ -1536,18 +1633,50 @@
                             .from('profiles')
                             .select('*');
                         if (uError) throw uError;
-                        users.value = profilesList;
+
+                        const { data: yearPeopleList, error: ypError } = await sbClient
+                            .from('year_people')
+                            .select('*')
+                            .eq('academic_year', selectedAcademicYear.value);
+                        if (ypError) throw ypError;
+                        yearPeople.value = yearPeopleList || [];
+
+                        const profileById = new Map((profilesList || []).map(profile => [profile.id, profile]));
+                        const scopedUsers = new Map();
+
+                        (profilesList || []).forEach(profile => {
+                            if (profile.role === 'admin' || profile.role === 'dean') {
+                                scopedUsers.set(profile.id, profile);
+                            }
+                        });
+
+                        (yearPeopleList || []).forEach(item => {
+                            const profile = profileById.get(item.user_id);
+                            if (!profile || item.is_active === false) return;
+                            scopedUsers.set(profile.id, {
+                                ...profile,
+                                role: item.role || profile.role,
+                                grade: item.grade || '',
+                                subject: item.subject || '',
+                                classes: item.classes || '',
+                                academic_year: item.academic_year,
+                                year_person_id: item.id
+                            });
+                        });
+
+                        users.value = Array.from(scopedUsers.values());
                         
                         // 2. Fetch project assignments
                         const { data: assignmentsList, error: aError } = await sbClient
                             .from('project_assignments')
-                            .select('*');
+                            .select('*')
+                            .eq('academic_year', selectedAcademicYear.value);
                         if (aError) throw aError;
-                        projectAssignments.value = assignmentsList;
+                        projectAssignments.value = assignmentsList || [];
                         
                         // Initialize Temp assignments
                         const assignmentsObj = {};
-                        assignmentsList.forEach(item => {
+                        (assignmentsList || []).forEach(item => {
                             assignmentsObj[item.grade + '::' + item.project_id] = item.leader_id || '';
                         });
                         tempAssignments.value = assignmentsObj;
@@ -1555,14 +1684,15 @@
                         // 3. Fetch assessment scores
                         const { data: scoresList, error: sError } = await sbClient
                             .from('assessment_scores')
-                            .select('*');
+                            .select('*')
+                            .eq('academic_year', selectedAcademicYear.value);
                         if (sError) throw sError;
-                        assessmentScores.value = scoresList;
+                        assessmentScores.value = scoresList || [];
                         
                         // Initialize Temp Scores & Notes
                         const scoresObj = {};
                         const notesObj = {};
-                        scoresList.forEach(item => {
+                        (scoresList || []).forEach(item => {
                             const key = item.teacher_id + '::' + item.project_id;
                             scoresObj[key] = item.score !== null ? item.score : '';
                             notesObj[key] = item.note || '';
@@ -1970,7 +2100,33 @@
                     };
                 };
 
+                const upsertYearPerson = async (userId, form) => {
+                    const role = form.role || 'teacher';
+                    if (role === 'admin' || role === 'dean') {
+                        const { error } = await sbClient
+                            .from('year_people')
+                            .delete()
+                            .eq('academic_year', selectedAcademicYear.value)
+                            .eq('user_id', userId);
+                        if (error) throw error;
+                        return;
+                    }
+                    const { error } = await sbClient
+                        .from('year_people')
+                        .upsert({
+                            academic_year: selectedAcademicYear.value,
+                            user_id: userId,
+                            role,
+                            grade: normalizeGrade(form.grade) || null,
+                            subject: form.subject || null,
+                            classes: form.classes || null,
+                            is_active: true
+                        }, { onConflict: 'academic_year,user_id' });
+                    if (error) throw error;
+                };
+
                 const saveUserEditForm = async () => {
+                    if (!ensureYearEditable('人员账号与权限维护')) return;
                     const form = userEditForm.value;
                     const isExisting = !!form.id;
                     const targetUser = isExisting ? users.value.find(user => user.id === form.id) : null;
@@ -1991,7 +2147,7 @@
 
                     setLoading(true, isExisting ? '正在更新账号与权限...' : '正在创建账号...');
                     try {
-                        const { error } = await sbClient.rpc('admin_create_user', {
+                        const { data: savedUserId, error } = await sbClient.rpc('admin_create_user', {
                             username_text: form.username.trim(),
                             password_text: String(form.password || '123456').trim() || '123456',
                             full_name_text: form.full_name.trim(),
@@ -2001,6 +2157,7 @@
                             classes_text: form.classes || null
                         });
                         if (error) throw error;
+                        await upsertYearPerson(savedUserId || form.id, form);
 
                         await loadAllData();
                         const updated = users.value.find(user => user.username === form.username.trim());
@@ -2202,6 +2359,7 @@
 
                 // Save Project Assignments
                 const saveAssignments = async () => {
+                    if (!ensureYearEditable('项目分发')) return;
                     setLoading(true, '正在保存项目分发...');
                     try {
                         const payload = [];
@@ -2213,6 +2371,7 @@
                                 if (leaderId && !validLeaderIds.includes(leaderId)) leaderId = null;
 
                                 payload.push({
+                                    academic_year: selectedAcademicYear.value,
                                     grade,
                                     project_id: project.id,
                                     leader_id: leaderId
@@ -2235,7 +2394,7 @@
                         
                         const { error } = await sbClient
                             .from('project_assignments')
-                            .upsert(payload, { onConflict: 'grade,project_id' });
+                            .upsert(payload, { onConflict: 'academic_year,grade,project_id' });
                             
                         if (error) throw error;
                         
@@ -2250,6 +2409,7 @@
 
                 // Score Entry Write operations (Leader workspace)
                 const saveVisibleScores = async (status) => {
+                    if (!ensureYearEditable(status === 'submitted' ? '提交评分' : '保存草稿')) return;
                     const entry = selectedProjectEntry.value;
                     if (!entry) return;
                     
@@ -2267,6 +2427,7 @@
                             }
                             
                             payload.push({
+                                academic_year: selectedAcademicYear.value,
                                 teacher_id: teacher.id,
                                 project_id: entry.project.id,
                                 score: scoreVal !== '' ? Number(scoreVal) : null,
@@ -2280,7 +2441,7 @@
 
                         const { error } = await sbClient
                             .from('assessment_scores')
-                            .upsert(payload, { onConflict: 'teacher_id,project_id' });
+                            .upsert(payload, { onConflict: 'academic_year,teacher_id,project_id' });
                             
                         if (error) throw error;
                         
@@ -2317,6 +2478,10 @@
 
                 // Excel Imports implementation
                 const handleImportExcel = async (event, mode) => {
+                    if (!ensureYearEditable('Excel 导入')) {
+                        event.target.value = '';
+                        return;
+                    }
                     const file = event.target.files[0];
                     if (!file) return;
                     
@@ -2378,6 +2543,7 @@
                                 if (createError) {
                                     console.error(`Import failed for row ${i + 1} (${name}):`, createError.message);
                                 } else {
+                                    await upsertYearPerson(newUid, { role, grade, subject, classes });
                                     importedCount++;
                                 }
                                 
@@ -2407,9 +2573,9 @@
                 // Download Teacher excel template
                 const downloadTeacherTemplate = () => {
                     const rows = [
-                        { "姓名": "张三", "年级": "六年级", "学科": "语文", "任课班级": "1班、2班", "角色": "被考核教师", "账号": "zhangsan", "密码": "123456" },
-                        { "姓名": "李四", "年级": "八年级", "学科": "数学", "任课班级": "1班", "角色": "被考核教师", "账号": "lisi", "密码": "123456" },
-                        { "姓名": "王五", "年级": "九年级", "学科": "英语", "任课班级": "3班、4班", "角色": "被考核教师", "账号": "wangwu", "密码": "123456" }
+                        { "学年度": selectedAcademicYear.value, "姓名": "张三", "年级": "六年级", "学科": "语文", "任课班级": "1班、2班", "角色": "被考核教师", "账号": "zhangsan", "密码": "123456" },
+                        { "学年度": selectedAcademicYear.value, "姓名": "李四", "年级": "八年级", "学科": "数学", "任课班级": "1班", "角色": "被考核教师", "账号": "lisi", "密码": "123456" },
+                        { "学年度": selectedAcademicYear.value, "姓名": "王五", "年级": "九年级", "学科": "英语", "任课班级": "3班、4班", "角色": "被考核教师", "账号": "wangwu", "密码": "123456" }
                     ];
                     exportWorkbook("教师年级学科导入模板.xlsx", [{ name: "教师导入", rows }]);
                 };
@@ -2417,8 +2583,8 @@
                 const downloadUserTemplate = () => {
                     const leaderCount = Math.max(1, Math.min(12, Number(defaultLeaderCount.value) || 4));
                     const rows = [
-                        { "姓名": "系统管理员", "账号": "admin", "密码": "123456", "角色": "管理员", "年级": "", "学科": "" },
-                        { "姓名": "教务主任", "账号": "dean", "密码": "123456", "角色": "教务主任", "年级": "", "学科": "" },
+                        { "学年度": selectedAcademicYear.value, "姓名": "系统管理员", "账号": "admin", "密码": "123456", "角色": "管理员", "年级": "", "学科": "" },
+                        { "学年度": selectedAcademicYear.value, "姓名": "教务主任", "账号": "dean", "密码": "123456", "角色": "教务主任", "年级": "", "学科": "" },
                     ];
                     const gradeSeeds = [
                         ["六年级", "g6"],
@@ -2429,6 +2595,7 @@
                     gradeSeeds.forEach(([grade, prefix]) => {
                         for (let i = 1; i <= leaderCount; i++) {
                             rows.push({
+                                "学年度": selectedAcademicYear.value,
                                 "姓名": `${grade}考核组长${i}`,
                                 "账号": `${prefix}_leader_${i}`,
                                 "密码": "123456",
@@ -2454,6 +2621,7 @@
                 const exportSummaryExcel = () => {
                     const rows = summaryRows.value.map(row => {
                         const item = {
+                            "学年度": selectedAcademicYear.value,
                             "教师姓名": row.name,
                             "年级": row.grade,
                             "年级类型": row.stage,
@@ -2518,6 +2686,13 @@
                     settingsSubTab,
                     currentUser,
                     dbError,
+                    selectedAcademicYear,
+                    academicYearOptions,
+                    isAnnualFillWindow,
+                    currentFillAcademicYear,
+                    canEditSelectedYear,
+                    yearModeText,
+                    handleAcademicYearChange,
                     retryLoad,
                     openWorkspace,
                     isAdminLike,
