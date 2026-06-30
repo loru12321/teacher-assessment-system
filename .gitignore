@@ -4,3 +4,7 @@ Thumbs.db
 *.log
 desktop-*-check.png
 mobile-*-check.png
+
+# Temp extraction files
+extracted_doc_text.txt
+word/

@@ -1,0 +1,1516 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%238E354A'/%3E%3Cpath d='M18 20h28v6H18zm0 10h28v6H18zm0 10h20v6H18z' fill='%23F7F5F0'/%3E%3C/svg%3E">
+    <title>教师考核系统 | 教学质量评价与汇总</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="./assets/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'china-red': '#8E354A',
+                        'paper-bg': '#F7F5F0',
+                        'ink': '#3E3A39',
+                        'slate-warm': '#8C8177',
+                        'gold-accent': '#B58C3D'
+                    },
+                    fontFamily: {
+                        serif: ['"SimSun"', 'serif'],
+                        sans: ['"Outfit"', '"PingFang SC"', '"Microsoft YaHei"', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background:
+                radial-gradient(circle at top left, rgba(142, 53, 74, 0.06), transparent 32%),
+                radial-gradient(circle at bottom right, rgba(214, 202, 178, 0.4), transparent 28%),
+                #F7F5F0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        [v-cloak] { display: none; }
+        
+        /* Modern Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.02);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(142, 53, 74, 0.2);
+            border-radius: 99px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(142, 53, 74, 0.4);
+        }
+        
+        .input-chinese {
+            border: 1px solid #D6CAB2;
+            background: #FCFCFA;
+            appearance: none;
+            transition: all 0.2s ease;
+        }
+        .input-chinese:focus {
+            border-color: #8E354A;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(142, 53, 74, 0.12);
+        }
+        
+        .loader {
+            border: 3px solid rgba(142, 53, 74, 0.1);
+            border-top: 3px solid #8E354A;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        .premium-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(62, 58, 57, 0.04), 0 8px 16px -6px rgba(62, 58, 57, 0.02);
+            border: 1px solid rgba(214, 202, 178, 0.5);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .premium-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 35px -10px rgba(62, 58, 57, 0.08), 0 10px 20px -8px rgba(62, 58, 57, 0.04);
+        }
+    </style>
+</head>
+<body class="min-h-screen text-ink font-sans">
+    
+    <div id="app" v-cloak class="min-h-screen flex flex-col">
+        
+        <!-- Global Loading Overlay -->
+        <div v-if="isLoading" class="fixed inset-0 bg-white/95 backdrop-blur-sm z-[999] flex flex-col items-center justify-center">
+            <div class="loader mb-4 w-12 h-12 border-4"></div>
+            <span class="font-bold text-lg text-ink">{{ loadingText || '正在处理数据...' }}</span>
+            <div v-if="loadingProgress > 0" class="w-64 bg-gray-200 h-2 rounded-full mt-3 overflow-hidden">
+                <div class="bg-china-red h-full transition-all duration-150" :style="{ width: loadingProgress + '%' }"></div>
+            </div>
+        </div>
+
+        <!-- App Layout -->
+        <div class="flex-grow flex flex-col lg:flex-row min-h-screen">
+            
+            <!-- Sidebar Panel -->
+            <aside class="w-full lg:w-64 bg-white/90 border-r border-[#D6CAB2] flex flex-col shrink-0 lg:sticky lg:top-0 lg:h-screen z-40">
+                <!-- Brand Title -->
+                <div class="p-6 border-b border-[#D6CAB2] flex items-center gap-3">
+                    <span class="w-10 h-10 rounded-xl bg-china-red text-white flex items-center justify-center text-xl shadow-lg shadow-red-100">
+                        <i class="ti ti-school"></i>
+                    </span>
+                    <div>
+                        <h1 class="text-base font-extrabold tracking-wide text-china-red leading-tight font-serif">考核管理系统</h1>
+                        <span class="text-xs text-slate-warm tracking-wider font-semibold">银山实验学校</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="flex-grow p-4 space-y-1.5 overflow-y-auto">
+                    <button v-if="isAdminLike" @click="activeTab = 'admin'" 
+                            :class="activeTab === 'admin' ? 'bg-china-red text-white shadow-md shadow-red-100' : 'text-slate-warm hover:bg-gray-50 hover:text-ink'"
+                            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm">
+                        <i class="ti ti-git-branch text-lg"></i>
+                        <span>导入与分发</span>
+                    </button>
+                    
+                    <button v-if="isLeader" @click="activeTab = 'leader'" 
+                            :class="activeTab === 'leader' ? 'bg-china-red text-white shadow-md shadow-red-100' : 'text-slate-warm hover:bg-gray-50 hover:text-ink'"
+                            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm">
+                        <i class="ti ti-edit text-lg"></i>
+                        <span>组长填报</span>
+                    </button>
+                    
+                    <button v-if="isAdminLike" @click="activeTab = 'summary'" 
+                            :class="activeTab === 'summary' ? 'bg-china-red text-white shadow-md shadow-red-100' : 'text-slate-warm hover:bg-gray-50 hover:text-ink'"
+                            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm">
+                        <i class="ti ti-report text-lg"></i>
+                        <span>管理员汇总</span>
+                    </button>
+                    
+                    <button v-if="currentUser?.role === 'teacher' || isAdminLike" @click="activeTab = 'teacher'" 
+                            :class="activeTab === 'teacher' ? 'bg-china-red text-white shadow-md shadow-red-100' : 'text-slate-warm hover:bg-gray-50 hover:text-ink'"
+                            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm">
+                        <i class="ti ti-user text-lg"></i>
+                        <span>教师个人端</span>
+                    </button>
+                    
+                    <button @click="activeTab = 'settings'" 
+                            :class="activeTab === 'settings' ? 'bg-china-red text-white shadow-md shadow-red-100' : 'text-slate-warm hover:bg-gray-50 hover:text-ink'"
+                            class="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all text-sm">
+                        <i class="ti ti-file-text text-lg"></i>
+                        <span>实施说明</span>
+                    </button>
+                </nav>
+
+                <!-- User Session Profile -->
+                <div class="p-4 border-t border-[#D6CAB2] bg-gray-50/50">
+                    <div class="flex items-center gap-3 mb-3" v-if="currentUser">
+                        <div class="w-9 h-9 rounded-full bg-slate-200 flex items-center justify-center font-extrabold text-slate-warm">
+                            {{ currentUser.full_name[0] }}
+                        </div>
+                        <div class="min-w-0 flex-grow">
+                            <p class="text-xs font-semibold text-slate-warm leading-none mb-1">
+                                {{ roleLabel(currentUser.role) }}
+                            </p>
+                            <p class="text-sm font-bold text-ink truncate">{{ currentUser.full_name }}</p>
+                        </div>
+                    </div>
+                    <button @click="handleLogout" class="w-full py-2.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 font-bold transition-all text-xs flex items-center justify-center gap-1.5">
+                        <i class="ti ti-logout"></i>
+                        <span>退出登录</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Main Panel -->
+            <main class="flex-grow p-6 lg:p-8 flex flex-col gap-6 max-w-7xl mx-auto w-full overflow-x-hidden">
+                
+                <!-- Header Stats Cards Banner -->
+                <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="premium-card p-5 flex items-center gap-4">
+                        <span class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl"><i class="ti ti-users"></i></span>
+                        <div>
+                            <p class="text-xs text-slate-warm font-semibold">被考核教师</p>
+                            <h3 class="text-xl font-black mt-0.5">{{ teachers.length }} 人</h3>
+                        </div>
+                    </div>
+                    <div class="premium-card p-5 flex items-center gap-4">
+                        <span class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center text-2xl"><i class="ti ti-clipboard-list"></i></span>
+                        <div>
+                            <p class="text-xs text-slate-warm font-semibold">考核项目数量</p>
+                            <h3 class="text-xl font-black mt-0.5">教师 6 / 班级 10</h3>
+                        </div>
+                    </div>
+                    <div class="premium-card p-5 flex items-center gap-4">
+                        <span class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl"><i class="ti ti-checkbox"></i></span>
+                        <div>
+                            <p class="text-xs text-slate-warm font-semibold">已提交记录</p>
+                            <h3 class="text-xl font-black mt-0.5">{{ submittedScoresCount }} 条</h3>
+                        </div>
+                    </div>
+                    <div class="premium-card p-5 flex items-center gap-4">
+                        <span class="w-12 h-12 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center text-2xl"><i class="ti ti-clock"></i></span>
+                        <div>
+                            <p class="text-xs text-slate-warm font-semibold">有缺项教师数</p>
+                            <h3 class="text-xl font-black mt-0.5 text-orange-600">{{ missingTeachersCount }} 人</h3>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Panel Views -->
+                
+                <!-- VIEW 1: ADMIN - IMPORT & ASSIGNMENT -->
+                <div v-if="activeTab === 'admin' && isAdminLike" class="space-y-6">
+                    <!-- Excel Import Cards -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="premium-card p-6 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-file-excel text-china-red text-xl"></i>导入教师名单</h3>
+                                    <button @click="downloadTeacherTemplate" class="text-xs text-china-red hover:underline font-bold"><i class="ti ti-download mr-1"></i>下载模板</button>
+                                </div>
+                                <p class="text-xs text-slate-warm leading-relaxed mb-6">
+                                    导入年级、学科及教师姓名名单。系统将根据姓名和拼音自动生成相匹配的系统账号，默认密码为 123456。
+                                </p>
+                            </div>
+                            <label class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#D6CAB2] bg-gray-50/50 hover:bg-[#F2ECE0]/30 cursor-pointer transition-all font-bold text-sm">
+                                <i class="ti ti-upload"></i>
+                                <span>选择 Excel 并导入教师</span>
+                                <input type="file" accept=".xlsx,.xls" class="hidden" @change="e => handleImportExcel(e, 'teacher')">
+                            </label>
+                        </div>
+                        
+                        <div class="premium-card p-6 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-users-group text-china-red text-xl"></i>导入系统账号</h3>
+                                    <button @click="downloadUserTemplate" class="text-xs text-china-red hover:underline font-bold"><i class="ti ti-download mr-1"></i>下载模板</button>
+                                </div>
+                                <p class="text-xs text-slate-warm leading-relaxed mb-6">
+                                    批量导入全校管理员、教务主任、考核组长。导入的组长可以在此系统直接登录，填写所负责的项目得分。
+                                </p>
+                            </div>
+                            <label class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#D6CAB2] bg-gray-50/50 hover:bg-[#F2ECE0]/30 cursor-pointer transition-all font-bold text-sm">
+                                <i class="ti ti-upload"></i>
+                                <span>选择 Excel 并导入账号</span>
+                                <input type="file" accept=".xlsx,.xls" class="hidden" @change="e => handleImportExcel(e, 'user')">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Project Assignments Dropdowns Panel -->
+                    <div class="premium-card p-6">
+                        <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+                            <div>
+                                <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-git-branch text-china-red text-xl"></i>考核项目组长分发</h3>
+                                <p class="text-xs text-slate-warm mt-1">每个考核组长在不同年级分到的项目不同。选择组长进行分发，负责项目支持多选多发。</p>
+                            </div>
+                            <button @click="saveAssignments" class="bg-china-red hover:bg-[#7D2E3E] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5 transition-all">
+                                <i class="ti ti-device-floppy"></i>
+                                <span>保存项目分发</span>
+                            </button>
+                        </div>
+
+                        <!-- Accordion Grades -->
+                        <div class="space-y-4">
+                            <div v-for="grade in grades" :key="grade" class="border border-[#D6CAB2] rounded-2xl overflow-hidden bg-gray-50/30">
+                                <div class="bg-white/80 border-b border-[#D6CAB2] px-6 py-4 flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-base font-extrabold font-serif">{{ grade }}</span>
+                                        <span class="px-2 py-0.5 rounded-full text-xs font-bold"
+                                              :class="gradeStage(grade) === '毕业年级' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'">
+                                            {{ gradeStage(grade) }}
+                                        </span>
+                                    </div>
+                                    <span class="text-xs text-slate-warm font-semibold">该年级适用项目 {{ getGradeProjectsCount(grade) }} 个</span>
+                                </div>
+                                <div class="p-6">
+                                    <!-- Table for project assignments -->
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left text-xs border-collapse">
+                                            <thead>
+                                                <tr class="border-b border-[#D6CAB2]">
+                                                    <th class="py-3 px-4 text-slate-warm font-bold uppercase w-1/4">考核类型</th>
+                                                    <th class="py-3 px-4 text-slate-warm font-bold uppercase w-1/3">项目名称</th>
+                                                    <th class="py-3 px-4 text-slate-warm font-bold uppercase w-12 text-center">满分</th>
+                                                    <th class="py-3 px-4 text-slate-warm font-bold uppercase">分发给负责考核组长（下拉多选）</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-for="project in getGradeProjects(grade)" :key="project.id" class="border-b border-gray-100 hover:bg-white/50">
+                                                    <td class="py-3.5 px-4 font-bold text-gray-400">{{ projectGroupLabel(project) }}</td>
+                                                    <td class="py-3.5 px-4">
+                                                        <p class="font-bold text-ink">{{ project.name }}</p>
+                                                        <p class="text-[10px] text-slate-warm truncate max-w-sm mt-0.5" :title="project.desc">{{ project.desc }}</p>
+                                                    </td>
+                                                    <td class="py-3.5 px-4 text-center font-extrabold text-china-red">{{ project.max }}</td>
+                                                    <td class="py-3.5 px-4">
+                                                        <select v-model="tempAssignments[grade + '::' + project.id]" class="input-chinese w-full max-w-md p-2 rounded-lg text-xs">
+                                                            <option value="">-- 未分配 (由管理员负责) --</option>
+                                                            <option v-for="leader in getGradeLeaders(grade)" :key="leader.id" :value="leader.id">
+                                                                {{ leader.full_name }} ({{ leader.username }})
+                                                            </option>
+                                                        </select>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- User List Panel -->
+                    <div class="premium-card p-6">
+                        <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+                            <div>
+                                <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-users-group text-china-red text-xl"></i>人员名单及账号列表</h3>
+                                <p class="text-xs text-slate-warm mt-1">系统内所有账号，包含管理员、教研组长/教务主任、考核组长及教师。</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <input v-model="userSearchKey" placeholder="搜索姓名/账号" class="input-chinese px-4 py-2 rounded-xl text-xs w-48">
+                                <select v-model="userSearchRole" class="input-chinese px-3 py-2 rounded-xl text-xs">
+                                    <option value="">全部角色</option>
+                                    <option value="admin">管理员</option>
+                                    <option value="dean">教务主任</option>
+                                    <option value="leader">考核组长</option>
+                                    <option value="teacher">被考核教师</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto rounded-xl border border-[#D6CAB2]">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-[#D6CAB2]">
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">姓名</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">账号 (Email)</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">角色</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">年级</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">学科</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">任课班级</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold text-center">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="user in filteredUsers" :key="user.id" class="border-b border-gray-100 hover:bg-gray-50/50">
+                                        <td class="py-3.5 px-5 font-bold text-ink">{{ user.full_name }}</td>
+                                        <td class="py-3.5 px-5 text-slate-warm font-mono">{{ user.username }} ({{ user.username }}@school.com)</td>
+                                        <td class="py-3.5 px-5">
+                                            <span :class="roleBadgeClass(user.role)" class="px-2 py-0.5 rounded-full text-[10px] font-bold">
+                                                {{ roleLabel(user.role) }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-5 font-semibold text-slate-warm">{{ user.grade || '-' }}</td>
+                                        <td class="py-3.5 px-5 font-semibold text-slate-warm">{{ user.subject || '-' }}</td>
+                                        <td class="py-3.5 px-5 font-semibold text-slate-warm">{{ user.classes || '-' }}</td>
+                                        <td class="py-3.5 px-5 text-center">
+                                            <button @click="handleDeleteUser(user)" class="text-red-500 hover:text-red-700 font-extrabold hover:underline" :disabled="user.id === currentUser.id">
+                                                删除
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="filteredUsers.length === 0">
+                                        <td colspan="7" class="py-8 text-center text-slate-warm font-bold">未找到匹配的人员。</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: LEADER - SCORE ENTRY -->
+                <div v-if="activeTab === 'leader' && isLeader" class="space-y-6">
+                    <div class="premium-card p-6">
+                        <div class="flex items-center justify-between mb-6 flex-wrap gap-4 border-b border-gray-100 pb-4">
+                            <div>
+                                <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-edit text-china-red text-xl"></i>组长填报工作台</h3>
+                                <p class="text-xs text-slate-warm mt-1">选择负责项目，录入教师分值，保存草稿或提交。</p>
+                            </div>
+                            
+                            <!-- Selection drop down for projects -->
+                            <div class="flex items-center gap-3">
+                                <label class="text-xs text-slate-warm font-bold whitespace-nowrap">考核项目：</label>
+                                <select v-model="leaderProjectId" class="input-chinese px-4 py-2.5 rounded-xl text-xs font-bold w-72">
+                                    <option v-for="entry in assignedProjectEntries" :key="entry.key" :value="entry.key">
+                                        {{ entry.grade }} · {{ projectGroupLabel(entry.project) }} · {{ entry.project.name }} ({{ entry.project.max }}分)
+                                    </option>
+                                    <option v-if="assignedProjectEntries.length === 0" value="">-- 暂未分配项目 --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Current Project Banner Info -->
+                        <div v-if="selectedProjectEntry" class="bg-gray-50 border border-[#D6CAB2] rounded-xl p-4 mb-6">
+                            <h4 class="text-sm font-extrabold text-ink flex items-center gap-2">
+                                <i class="ti ti-info-circle text-china-red"></i>
+                                {{ selectedProjectEntry.grade }} · {{ selectedProjectEntry.project.name }}
+                                <span class="px-2 py-0.5 rounded-full text-[10px] bg-china-red/10 text-china-red font-bold">
+                                    最高分 {{ selectedProjectEntry.project.max }} 分
+                                </span>
+                            </h4>
+                            <p class="text-xs text-slate-warm leading-relaxed mt-1.5">{{ selectedProjectEntry.project.desc }}</p>
+                        </div>
+
+                        <!-- Scores Table -->
+                        <div v-if="selectedProjectEntry" class="overflow-x-auto rounded-xl border border-[#D6CAB2]">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-[#D6CAB2]">
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">被考核教师</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">年级</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">学科</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">任课班级</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold w-36">分值 (最大值 {{ selectedProjectEntry.project.max }})</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">填写依据 / 扣分备注</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold text-center">状态</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold text-center">填报人</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="teacher in applicableTeachersForSelectedProject" :key="teacher.id" class="border-b border-gray-100 hover:bg-gray-50/30">
+                                        <td class="py-3.5 px-5 font-bold text-ink">{{ teacher.full_name }}</td>
+                                        <td class="py-3.5 px-5 font-semibold text-slate-warm">{{ teacher.grade }}</td>
+                                        <td class="py-3.5 px-5 font-semibold text-slate-warm">{{ teacher.subject }}</td>
+                                        <td class="py-3.5 px-5 font-semibold text-slate-warm">{{ teacher.classes || '-' }}</td>
+                                        <td class="py-3.5 px-5">
+                                            <input type="number" step="0.1" min="0" :max="selectedProjectEntry.project.max" 
+                                                   v-model.number="tempScores[teacher.id + '::' + selectedProjectEntry.project.id]" 
+                                                   class="input-chinese w-28 px-3 py-1.5 rounded-lg font-bold text-center"
+                                                   @blur="validateClampedScore(teacher.id, selectedProjectEntry.project)">
+                                        </td>
+                                        <td class="py-3.5 px-5">
+                                            <textarea v-model="tempNotes[teacher.id + '::' + selectedProjectEntry.project.id]" 
+                                                      rows="1" class="input-chinese w-full px-3 py-1.5 rounded-lg"
+                                                      placeholder="说明依据/备注..."></textarea>
+                                        </td>
+                                        <td class="py-3.5 px-5 text-center">
+                                            <span :class="scoreStatusBadgeClass(getScoreRecord(teacher.id, selectedProjectEntry.project.id)?.status)" 
+                                                  class="px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                                                {{ scoreStatusLabel(getScoreRecord(teacher.id, selectedProjectEntry.project.id)?.status) }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-5 text-center font-semibold text-slate-warm">
+                                            {{ getScoreRecord(teacher.id, selectedProjectEntry.project.id)?.scorer_name || '-' }}
+                                        </td>
+                                    </tr>
+                                    <tr v-if="applicableTeachersForSelectedProject.length === 0">
+                                        <td colspan="8" class="py-8 text-center text-slate-warm font-bold">本年级暂无对应的被考核教师。</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Actions Buttons -->
+                        <div v-if="selectedProjectEntry && applicableTeachersForSelectedProject.length > 0" class="flex justify-end gap-3 mt-6 border-t border-gray-100 pt-4">
+                            <button @click="saveVisibleScores('draft')" class="px-5 py-2.5 border border-[#D6CAB2] hover:bg-[#F2ECE0]/20 rounded-xl font-bold text-sm transition-all text-slate-warm">
+                                <i class="ti ti-save mr-1"></i>保存为草稿
+                            </button>
+                            <button @click="saveVisibleScores('submitted')" class="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-1.5 shadow-md shadow-green-100">
+                                <i class="ti ti-circle-check"></i>提交本项目
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 3: SUMMARY - FULL TABLE WITH DYNAMIC RANKS -->
+                <div v-if="activeTab === 'summary' && isAdminLike" class="space-y-6">
+                    <!-- Advanced Filters -->
+                    <div class="premium-card p-6">
+                        <h3 class="text-sm font-extrabold text-slate-warm uppercase tracking-wider mb-4"><i class="ti ti-filter mr-1"></i>考核数据过滤器</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-xs text-slate-warm font-bold">年级分类</label>
+                                <select v-model="filterStage" class="input-chinese px-3 py-2.5 rounded-xl text-xs">
+                                    <option value="">全部年级类型</option>
+                                    <option value="毕业年级">毕业年级 (九年级)</option>
+                                    <option value="非毕业年级">非毕业年级 (六/七/八年级)</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-xs text-slate-warm font-bold">年级筛选</label>
+                                <select v-model="filterGrade" class="input-chinese px-3 py-2.5 rounded-xl text-xs">
+                                    <option value="">全部年级</option>
+                                    <option v-for="grade in grades" :key="grade" :value="grade">{{ grade }}</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-xs text-slate-warm font-bold">任教学科</label>
+                                <select v-model="filterSubject" class="input-chinese px-3 py-2.5 rounded-xl text-xs">
+                                    <option value="">全部学科</option>
+                                    <option v-for="subject in uniqueSubjects" :key="subject" :value="subject">{{ subject }}</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-xs text-slate-warm font-bold">教师搜索</label>
+                                <input v-model="filterKeyword" placeholder="输入教师姓名" class="input-chinese px-3 py-2.5 rounded-xl text-xs">
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-xs text-slate-warm font-bold">数据完整性</label>
+                                <select v-model="filterStatus" class="input-chinese px-3 py-2.5 rounded-xl text-xs">
+                                    <option value="">全部</option>
+                                    <option value="complete">项目齐全</option>
+                                    <option value="missing">存在缺项</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Scoreboard Card -->
+                    <div class="premium-card p-6">
+                        <div class="flex items-center justify-between mb-6 flex-wrap gap-4 border-b border-gray-100 pb-4">
+                            <div>
+                                <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-chart-bar text-china-red text-xl"></i>成绩考核与班级考核平行汇总表</h3>
+                                <p class="text-xs text-slate-warm mt-1">教师个人成绩考核与班级教学成绩考核平行计算（无相关性），分别计算各自的总得分和排名。</p>
+                            </div>
+                            <button @click="exportSummaryExcel" class="bg-china-red hover:bg-[#7D2E3E] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-1.5 transition-all">
+                                <i class="ti ti-download"></i>
+                                <span>导出汇总 Excel</span>
+                            </button>
+                        </div>
+
+                        <!-- Summary Table -->
+                        <div class="overflow-x-auto rounded-xl border border-[#D6CAB2] bg-white">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-[#D6CAB2]">
+                                        <th class="py-3 px-4 text-slate-warm font-bold">教师</th>
+                                        <th class="py-3 px-4 text-slate-warm font-bold">年级</th>
+                                        <th class="py-3 px-4 text-slate-warm font-bold">学科</th>
+                                        <!-- Column headers for Teacher Projects -->
+                                        <th v-for="p in teacherProjects" :key="p.id" class="py-3 px-4 text-slate-warm font-bold text-center border-l border-gray-100 w-24">
+                                            <p class="leading-none text-[10px] text-gray-400 font-semibold mb-0.5">师评</p>
+                                            <p class="truncate text-ink font-bold leading-tight" :title="p.name">{{ p.name }}</p>
+                                            <span class="text-[9px] text-china-red font-extrabold font-mono">({{ p.max }}分)</span>
+                                        </th>
+                                        <!-- Column headers for Class Projects -->
+                                        <th v-for="p in classProjects" :key="p.id" class="py-3 px-4 text-slate-warm font-bold text-center border-l border-gray-100 w-24">
+                                            <p class="leading-none text-[10px] text-gray-400 font-semibold mb-0.5">班评</p>
+                                            <p class="truncate text-ink font-bold leading-tight" :title="p.name">{{ p.name }}</p>
+                                            <span class="text-[9px] text-china-red font-extrabold font-mono">({{ p.max }}分)</span>
+                                        </th>
+                                        
+                                        <!-- Total Scores & Ranks -->
+                                        <th class="py-3 px-4 text-slate-warm font-bold border-l-2 border-[#D6CAB2] text-center w-28 bg-[#8E354A]/5">教师成绩考核</th>
+                                        <th class="py-3 px-4 text-slate-warm font-bold border-l border-gray-200 text-center w-28 bg-amber-500/5">班级考核得分</th>
+                                        <th class="py-3 px-4 text-slate-warm font-bold border-l border-gray-200 text-center w-24">数据状态</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="row in summaryRows" :key="row.id" class="border-b border-gray-100 hover:bg-[#F2ECE0]/20">
+                                        <td class="py-3.5 px-4 font-bold text-ink">{{ row.name }}</td>
+                                        <td class="py-3.5 px-4 font-semibold text-slate-warm">{{ row.grade }}</td>
+                                        <td class="py-3.5 px-4 font-semibold text-slate-warm">{{ row.subject }}</td>
+                                        
+                                        <!-- Teacher Projects Cell Scores -->
+                                        <td v-for="p in teacherProjects" :key="p.id" class="py-3.5 px-4 text-center border-l border-gray-100 font-bold">
+                                            <div v-if="projectAppliesToGrade(p, row.grade)">
+                                                <p :class="row.scores[p.id]?.score !== undefined ? 'text-ink' : 'text-red-500'" class="text-sm">
+                                                    {{ row.scores[p.id]?.score !== undefined ? row.scores[p.id].score : '-' }}
+                                                </p>
+                                                <span class="text-[9px] px-1.5 py-0.5 rounded-full" 
+                                                      :class="scoreStatusBadgeClass(row.scores[p.id]?.status)">
+                                                    {{ scoreStatusLabel(row.scores[p.id]?.status) }}
+                                                </span>
+                                            </div>
+                                            <span v-else class="text-[10px] text-gray-300 font-bold">/</span>
+                                        </td>
+                                        
+                                        <!-- Class Projects Cell Scores -->
+                                        <td v-for="p in classProjects" :key="p.id" class="py-3.5 px-4 text-center border-l border-gray-100 font-bold">
+                                            <div v-if="projectAppliesToGrade(p, row.grade)">
+                                                <p :class="row.scores[p.id]?.score !== undefined ? 'text-ink' : 'text-red-500'" class="text-sm">
+                                                    {{ row.scores[p.id]?.score !== undefined ? row.scores[p.id].score : '-' }}
+                                                </p>
+                                                <span class="text-[9px] px-1.5 py-0.5 rounded-full" 
+                                                      :class="scoreStatusBadgeClass(row.scores[p.id]?.status)">
+                                                    {{ scoreStatusLabel(row.scores[p.id]?.status) }}
+                                                </span>
+                                            </div>
+                                            <span v-else class="text-[10px] text-gray-300 font-bold">/</span>
+                                        </td>
+
+                                        <!-- Teacher Assessment Total & Rank -->
+                                        <td class="py-3.5 px-4 text-center border-l-2 border-[#D6CAB2] bg-[#8E354A]/5">
+                                            <h4 class="text-sm font-black text-china-red">{{ row.teacherTotal.toFixed(1) }}</h4>
+                                            <span v-if="row.teacherTotal > 0" class="text-[9px] px-2 py-0.5 rounded-full bg-china-red text-white font-bold leading-none inline-block mt-1.5">
+                                                第 {{ row.teacherRank }} 名
+                                            </span>
+                                        </td>
+                                        
+                                        <!-- Class Assessment Total & Rank -->
+                                        <td class="py-3.5 px-4 text-center border-l border-gray-200 bg-amber-500/5">
+                                            <h4 class="text-sm font-black text-amber-700">{{ row.classTotal.toFixed(1) }}</h4>
+                                            <span v-if="row.classTotal > 0" class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500 text-white font-bold leading-none inline-block mt-1.5">
+                                                第 {{ row.classRank }} 名
+                                            </span>
+                                        </td>
+                                        
+                                        <!-- Data Integrity Status -->
+                                        <td class="py-3.5 px-4 text-center border-l border-gray-200">
+                                            <span v-if="row.missingCount === 0" class="px-2 py-0.5 rounded-full text-[10px] bg-green-50 text-green-700 font-bold">
+                                                齐全
+                                            </span>
+                                            <span v-else class="px-2 py-0.5 rounded-full text-[10px] bg-red-50 text-red-600 font-bold" :title="row.missingDetails.join('、')">
+                                                缺 {{ row.missingCount }} 项
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="summaryRows.length === 0">
+                                        <td :colspan="3 + teacherProjects.length + classProjects.length + 3" class="py-8 text-center text-slate-warm font-bold">
+                                            无对应教师的汇总成绩数据。
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 4: TEACHER - PERSONAL SCORECARD -->
+                <div v-if="activeTab === 'teacher' && (currentUser?.role === 'teacher' || isAdminLike)" class="space-y-6">
+                    <div class="premium-card p-6">
+                        <div class="flex items-center justify-between mb-6 flex-wrap gap-4 border-b border-gray-100 pb-4">
+                            <div>
+                                <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-id-badge text-china-red text-xl"></i>教师个人考核卡片</h3>
+                                <p class="text-xs text-slate-warm mt-1">查看本人考核成绩、班级考核成绩、组长填报依据及对应在学校的平行排名。</p>
+                            </div>
+                            
+                            <!-- Dropdown for Admin to view different teachers -->
+                            <div v-if="isAdminLike" class="flex items-center gap-3">
+                                <label class="text-xs text-slate-warm font-bold">查看教师：</label>
+                                <select v-model="teacherViewId" class="input-chinese px-4 py-2 rounded-xl text-xs w-48 font-bold">
+                                    <option v-for="teacher in teachers" :key="teacher.id" :value="teacher.id">
+                                        {{ teacher.full_name }} ({{ teacher.grade }})
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Scorecard Grid metrics -->
+                        <div v-if="targetTeacherRow" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                            <div class="bg-gray-50 border border-[#D6CAB2] rounded-xl p-5 text-center">
+                                <span class="text-xs text-slate-warm font-bold">个人信息</span>
+                                <h3 class="text-lg font-black text-ink mt-1 font-serif">{{ targetTeacherRow.name }}</h3>
+                                <p class="text-xs text-slate-warm mt-1 font-semibold">{{ targetTeacherRow.grade }} · {{ targetTeacherRow.subject }}</p>
+                            </div>
+                            <div class="bg-gray-50 border border-[#D6CAB2] rounded-xl p-5 text-center">
+                                <span class="text-xs text-slate-warm font-bold">教师成绩考核得分</span>
+                                <h3 class="text-2xl font-black text-china-red mt-1">{{ targetTeacherRow.teacherTotal.toFixed(1) }}</h3>
+                                <p class="text-xs text-slate-warm mt-1 font-bold">全校排名第 {{ targetTeacherRow.teacherRank || '-' }} 名</p>
+                            </div>
+                            <div class="bg-gray-50 border border-[#D6CAB2] rounded-xl p-5 text-center">
+                                <span class="text-xs text-slate-warm font-bold">班级考核得分</span>
+                                <h3 class="text-2xl font-black text-amber-700 mt-1">{{ targetTeacherRow.classTotal.toFixed(1) }}</h3>
+                                <p class="text-xs text-slate-warm mt-1 font-bold">全校排名第 {{ targetTeacherRow.classRank || '-' }} 名</p>
+                            </div>
+                            <div class="bg-gray-50 border border-[#D6CAB2] rounded-xl p-5 text-center">
+                                <span class="text-xs text-slate-warm font-bold">数据包完整度</span>
+                                <h3 class="text-lg font-black mt-1 font-serif" :class="targetTeacherRow.missingCount === 0 ? 'text-green-600' : 'text-red-500'">
+                                    {{ targetTeacherRow.missingCount === 0 ? '完全齐全' : '有缺失项' }}
+                                </h3>
+                                <p class="text-[10px] text-slate-warm mt-1 leading-relaxed truncate">{{ targetTeacherRow.missingCount === 0 ? '所有分配项目均已提交' : '缺失: ' + targetTeacherRow.missingDetails.join('、') }}</p>
+                            </div>
+                        </div>
+
+                        <!-- score details list -->
+                        <div v-if="targetTeacherRow" class="overflow-x-auto rounded-xl border border-[#D6CAB2]">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-50 border-b border-[#D6CAB2]">
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">考核类型</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">项目</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold text-center">分值</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold text-center">得分</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold text-center">状态</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">扣分说明及填报依据</th>
+                                        <th class="py-3.5 px-5 text-slate-warm font-bold">考核填报人</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="project in getTeacherApplicableProjects(targetTeacherRow)" :key="project.id" class="border-b border-gray-100 hover:bg-gray-50/50">
+                                        <td class="py-3.5 px-5 font-bold text-gray-400">{{ projectGroupLabel(project) }}</td>
+                                        <td class="py-3.5 px-5">
+                                            <p class="font-bold text-ink">{{ project.name }}</p>
+                                            <p class="text-[10px] text-slate-warm mt-0.5">{{ project.desc }}</p>
+                                        </td>
+                                        <td class="py-3.5 px-5 text-center font-extrabold text-slate-warm">{{ project.max }}</td>
+                                        <td class="py-3.5 px-5 text-center font-extrabold text-lg text-china-red">
+                                            {{ targetTeacherRow.scores[project.id]?.score !== undefined ? targetTeacherRow.scores[project.id].score : '-' }}
+                                        </td>
+                                        <td class="py-3.5 px-5 text-center">
+                                            <span :class="scoreStatusBadgeClass(targetTeacherRow.scores[project.id]?.status)" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+                                                {{ scoreStatusLabel(targetTeacherRow.scores[project.id]?.status) }}
+                                            </span>
+                                        </td>
+                                        <td class="py-3.5 px-5 font-medium text-slate-warm max-w-sm whitespace-normal leading-relaxed">
+                                            {{ targetTeacherRow.scores[project.id]?.note || '-' }}
+                                        </td>
+                                        <td class="py-3.5 px-5 font-semibold text-slate-warm">
+                                            {{ targetTeacherRow.scores[project.id]?.scorer_name || '-' }}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 5: SETTINGS & DOCUMENTATION -->
+                <div v-if="activeTab === 'settings'" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="premium-card p-6 space-y-4">
+                        <h3 class="text-base font-extrabold text-china-red border-b border-gray-100 pb-2 flex items-center gap-1.5"><i class="ti ti-file-text"></i>教师成绩评价办法</h3>
+                        <div class="text-xs text-ink leading-relaxed space-y-3">
+                            <p>教师个人考核成绩总分 100 分，由以下六项组成：</p>
+                            <ol class="list-decimal list-inside space-y-2 text-slate-warm font-medium">
+                                <li><strong class="text-ink">两率一分成绩 (54分)</strong>：优秀率 (40%)、及格率 (30%)、平均分 (30%) 综合折算。公式：<code class="bg-gray-100 px-1 py-0.5 rounded font-mono text-china-red">(个人优秀率/最高优秀率*40 + 个人及格率/最高及格率*30 + 个人平均分/最高平均分*30) / 最高教师成绩 * 54</code></li>
+                                <li><strong class="text-ink">优秀率增幅 (6分)</strong>：常规增幅与维持增幅取高者计算。常规增幅为现优秀率与原始优秀率差值。</li>
+                                <li><strong class="text-ink">班级协调组成绩 (10分)</strong>：基于所教班级整体两率一分得分折算。</li>
+                                <li><strong class="text-ink">学科集体协作成绩 (10分)</strong>：同一学科组平均成绩折算。</li>
+                                <li><strong class="text-ink">后 1/3 学生成绩 (15分)</strong>：关注薄弱学生群体转换率。</li>
+                                <li><strong class="text-ink">课时工作量 (5分)</strong>：周课时比重折算，早晚自习按 1.5 倍计算。</li>
+                            </ol>
+                        </div>
+                    </div>
+                    
+                    <div class="premium-card p-6 space-y-4">
+                        <h3 class="text-base font-extrabold text-china-red border-b border-gray-100 pb-2 flex items-center gap-1.5"><i class="ti ti-file-certificate"></i>班级成绩考核办法 (与教师平行)</h3>
+                        <div class="text-xs text-ink leading-relaxed space-y-3">
+                            <p><strong>非毕业年级 (6, 7, 8 年级) 班级考核 (100分)</strong>：</p>
+                            <ul class="list-disc list-inside space-y-1 text-slate-warm font-medium">
+                                <li>期末成绩 (60分)：两率一分 (50分) + 优秀率增幅 (10分)。</li>
+                                <li>优秀学生得分 (10分) / 班级平均分 (10分)</li>
+                                <li>尖子生培育 (15分) / 后 1/3 学生成绩 (5分)</li>
+                            </ul>
+                            <p class="mt-4"><strong>毕业年级 (9 年级) 班级考核 (100分)</strong>：</p>
+                            <ul class="list-disc list-inside space-y-1 text-slate-warm font-medium">
+                                <li>期末成绩 (45分) / 后 1/3 学生成绩 (5分)</li>
+                                <li>指标生完成度 (20分)</li>
+                                <li>高中过线率 (15分) / 高分段贡献 (15分)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        const SUPABASE_URL = 'https://qfhkicgfhetcgcvupsxu.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_a2e5g0OkKOPmZbollq1iOA_mSOZxDzc';
+        const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // System static projects configuration
+        const PROJECTS = [
+            { id: "teacher_two_rates_one_score", group: "teacher", name: "两率一分", max: 60, desc: "教师成绩考核主体项目，包含两率一分(54分)和优秀率增幅(6分)综合核算。" },
+            { id: "teacher_class_collaboration", group: "teacher", name: "班级协调成绩", max: 10, desc: "教师成绩考核项目，按任教班级整体优秀率、及格率、平均分等折算。" },
+            { id: "teacher_subject_collaboration", group: "teacher", name: "学科组协同成绩", max: 10, desc: "教师成绩考核项目，按同学科组整体表现折算，体现团队协同。" },
+            { id: "teacher_bottom_third", group: "teacher", name: "后 1/3 学生成绩", max: 10, desc: "教师成绩考核项目，关注底部学生群体表现，体现托底转化质量。" },
+            { id: "teacher_excellent_contribution", group: "teacher", name: "指标生 / 优秀生贡献", max: 5, desc: "教师成绩考核项目，非毕业年级看前 150 名，毕业年级看高分段和指标完成。" },
+            { id: "teacher_workload", group: "teacher", name: "课时量成绩", max: 5, desc: "教师成绩考核项目，按周课时量和学校最高课时量折算工作量。" },
+            
+            { id: "class_term_score_non_grad", group: "class", stage: "非毕业年级", name: "班级期末成绩", max: 60, desc: "非毕业年级班级考核项目，按期末两率一分和增幅核算。" },
+            { id: "class_top_students_non_grad", group: "class", stage: "非毕业年级", name: "尖优学生得分", max: 10, desc: "非毕业年级班级考核项目，按全校总成绩名次段赋分。" },
+            { id: "class_average_non_grad", group: "class", stage: "非毕业年级", name: "班级平均分", max: 10, desc: "非毕业年级班级考核项目，与同类型班级最高平均分比较折算。" },
+            { id: "class_target_non_grad", group: "class", stage: "非毕业年级", name: "优秀指标完成", max: 15, desc: "非毕业年级班级考核项目，完成指标得基础分，超额得附加分。" },
+            { id: "class_bottom_third_non_grad", group: "class", stage: "非毕业年级", name: "班级后 1/3 学生成绩", max: 5, desc: "非毕业年级班级考核项目，按班级后 1/3 学生表现核算。" },
+            
+            { id: "class_two_rates_one_score_grad", group: "class", stage: "毕业年级", name: "毕业班两率一分", max: 45, desc: "毕业年级班级考核项目，按两率一分和增幅合并核算。" },
+            { id: "class_target_grad", group: "class", stage: "毕业年级", name: "毕业班指标完成", max: 20, desc: "毕业年级班级考核项目，指标一、指标二分别折算，超额有附加分。" },
+            { id: "class_bottom_third_grad", group: "class", stage: "毕业年级", name: "毕业班后 1/3 学生成绩", max: 5, desc: "毕业年级班级考核项目，关注底部学生稳定和转化。" },
+            { id: "class_high_school_contribution_grad", group: "class", stage: "毕业年级", name: "高中贡献率", max: 15, desc: "毕业年级班级考核项目，按普通公立高中过线人数比例计算。" },
+            { id: "class_high_score_grad", group: "class", stage: "毕业年级", name: "高分段贡献", max: 15, desc: "毕业年级班级考核项目，按总分550分以上人数与最高班级相比折算。" }
+        ];
+
+        createApp({
+            setup() {
+                const isLoading = ref(false);
+                const loadingText = ref('');
+                const loadingProgress = ref(0);
+                const activeTab = ref('admin');
+                const currentUser = ref(null);
+                
+                const users = ref([]);
+                const projectAssignments = ref([]);
+                const assessmentScores = ref([]);
+                
+                const grades = ["六年级", "七年级", "八年级", "九年级"];
+                const teacherProjects = PROJECTS.filter(p => p.group === 'teacher');
+                const classProjects = PROJECTS.filter(p => p.group === 'class');
+                
+                // Admin assignment state
+                const tempAssignments = ref({});
+                
+                // Leader scoring state
+                const leaderProjectId = ref('');
+                const tempScores = ref({});
+                const tempNotes = ref({});
+                
+                // Search filters for admin user list
+                const userSearchKey = ref('');
+                const userSearchRole = ref('');
+                
+                // Summary Filters
+                const filterStage = ref('');
+                const filterGrade = ref('');
+                const filterSubject = ref('');
+                const filterKeyword = ref('');
+                const filterStatus = ref('');
+                
+                // Teacher view state
+                const teacherViewId = ref('');
+
+                // Helper utility: set global loading state
+                const setLoading = (loading, text = '', progress = 0) => {
+                    isLoading.value = loading;
+                    loadingText.value = text;
+                    loadingProgress.value = progress;
+                };
+
+                // Check authorization and fetch initial data
+                const checkSession = async () => {
+                    setLoading(true, '验证登录状态...');
+                    try {
+                        const { data: { session }, error } = await sbClient.auth.getSession();
+                        if (error || !session) {
+                            window.location.href = 'sign-in.html';
+                            return;
+                        }
+                        
+                        // Fetch profile role mapping
+                        const { data: profile, error: pError } = await sbClient
+                            .from('profiles')
+                            .select('*')
+                            .eq('id', session.user.id)
+                            .maybeSingle();
+                        
+                        if (pError || !profile) {
+                            console.error('Cannot resolve current user profile.');
+                            await sbClient.auth.signOut();
+                            window.location.href = 'sign-in.html';
+                            return;
+                        }
+                        
+                        currentUser.value = profile;
+                        
+                        // Set default tab based on role
+                        if (profile.role === 'admin' || profile.role === 'dean') {
+                            activeTab.value = 'admin';
+                        } else if (profile.role === 'leader') {
+                            activeTab.value = 'leader';
+                        } else {
+                            activeTab.value = 'teacher';
+                        }
+
+                        // Load data
+                        await loadAllData();
+                    } catch (e) {
+                        console.error('Session validation error:', e);
+                        window.location.href = 'sign-in.html';
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                // Fetch database records
+                const loadAllData = async () => {
+                    try {
+                        // 1. Fetch profiles
+                        const { data: profilesList, error: uError } = await sbClient
+                            .from('profiles')
+                            .select('*');
+                        if (uError) throw uError;
+                        users.value = profilesList;
+                        
+                        // 2. Fetch project assignments
+                        const { data: assignmentsList, error: aError } = await sbClient
+                            .from('project_assignments')
+                            .select('*');
+                        if (aError) throw aError;
+                        projectAssignments.value = assignmentsList;
+                        
+                        // Initialize Temp assignments
+                        const assignmentsObj = {};
+                        assignmentsList.forEach(item => {
+                            assignmentsObj[item.grade + '::' + item.project_id] = item.leader_id || '';
+                        });
+                        tempAssignments.value = assignmentsObj;
+                        
+                        // 3. Fetch assessment scores
+                        const { data: scoresList, error: sError } = await sbClient
+                            .from('assessment_scores')
+                            .select('*');
+                        if (sError) throw sError;
+                        assessmentScores.value = scoresList;
+                        
+                        // Initialize Temp Scores & Notes
+                        const scoresObj = {};
+                        const notesObj = {};
+                        scoresList.forEach(item => {
+                            const key = item.teacher_id + '::' + item.project_id;
+                            scoresObj[key] = item.score !== null ? item.score : '';
+                            notesObj[key] = item.note || '';
+                        });
+                        tempScores.value = scoresObj;
+                        tempNotes.value = notesObj;
+
+                        // Setup default view ids
+                        if (teachers.value.length > 0) {
+                            teacherViewId.value = currentUser.value.role === 'teacher' ? currentUser.value.id : teachers.value[0].id;
+                        }
+                        
+                        // Setup default leader selection project
+                        if (assignedProjectEntries.value.length > 0) {
+                            leaderProjectId.value = assignedProjectEntries.value[0].key;
+                        }
+                    } catch (e) {
+                        alert('数据加载失败: ' + e.message);
+                    }
+                };
+
+                // Role labels mapper
+                const roleLabel = (role) => {
+                    const map = {
+                        admin: "系统管理员",
+                        dean: "教务主任",
+                        leader: "考核组长",
+                        teacher: "被考核教师"
+                    };
+                    return map[role] || role;
+                };
+
+                // Badge mapping styling
+                const roleBadgeClass = (role) => {
+                    const map = {
+                        admin: "bg-red-50 text-red-600 border border-red-200",
+                        dean: "bg-purple-50 text-purple-600 border border-purple-200",
+                        leader: "bg-blue-50 text-blue-600 border border-blue-200",
+                        teacher: "bg-green-50 text-green-700 border border-green-200"
+                    };
+                    return map[role] || "bg-gray-100 text-gray-600";
+                };
+
+                const scoreStatusBadgeClass = (status) => {
+                    if (status === 'submitted') return 'bg-green-50 text-green-700 border border-green-200';
+                    if (status === 'draft') return 'bg-amber-50 text-amber-700 border border-amber-200';
+                    return 'bg-red-50 text-red-600 border border-red-200';
+                };
+
+                const scoreStatusLabel = (status) => {
+                    if (status === 'submitted') return '已提交';
+                    if (status === 'draft') return '草稿';
+                    return '缺项';
+                };
+
+                // Computed variables
+                const isAdminLike = computed(() => {
+                    return currentUser.value && (currentUser.value.role === 'admin' || currentUser.value.role === 'dean');
+                });
+                
+                const isLeader = computed(() => {
+                    return isAdminLike.value || (currentUser.value && currentUser.value.role === 'leader');
+                });
+
+                const teachers = computed(() => {
+                    return users.value.filter(u => u.role === 'teacher');
+                });
+
+                // Filtered users list in admin panel
+                const filteredUsers = computed(() => {
+                    return users.value.filter(u => {
+                        const matchesSearch = !userSearchKey.value || 
+                            u.full_name.includes(userSearchKey.value) || 
+                            u.username.includes(userSearchKey.value);
+                        const matchesRole = !userSearchRole.value || u.role === userSearchRole.value;
+                        return matchesSearch && matchesRole;
+                    }).sort((a, b) => a.role.localeCompare(b.role) || a.username.localeCompare(b.username));
+                });
+
+                // Unique subjects for filtering
+                const uniqueSubjects = computed(() => {
+                    const list = users.value.map(u => u.subject).filter(Boolean);
+                    return Array.from(new Set(list)).sort((a, b) => a.localeCompare(b, 'zh-CN'));
+                });
+
+                // Helpers for grade classification
+                const gradeStage = (grade) => {
+                    const text = String(grade || "").trim();
+                    if (/[9九]/.test(text)) return "毕业年级";
+                    if (/[6六7七8八]/.test(text)) return "非毕业年级";
+                    return "未设置";
+                };
+
+                const projectAppliesToGrade = (project, grade) => {
+                    return !project.stage || project.stage === gradeStage(grade);
+                };
+
+                const getGradeProjects = (grade) => {
+                    return PROJECTS.filter(p => projectAppliesToGrade(p, grade));
+                };
+
+                const getGradeProjectsCount = (grade) => {
+                    return getGradeProjects(grade).length;
+                };
+
+                // Leaders residing in specific grades
+                const getGradeLeaders = (grade) => {
+                    return users.value.filter(u => u.role === 'leader' && u.grade === grade);
+                };
+
+                const projectGroupLabel = (project) => {
+                    return project.group === 'class' ? '班级考核' : '教师成绩考核';
+                };
+
+                // Projects assigned to the logged-in leader
+                const assignedProjectEntries = computed(() => {
+                    if (!currentUser.value) return [];
+                    const list = [];
+                    grades.forEach(grade => {
+                        getGradeProjects(grade).forEach(project => {
+                            const key = grade + '::' + project.id;
+                            const leaderId = tempAssignments.value[key];
+                            if (isAdminLike.value || leaderId === currentUser.value.id) {
+                                list.push({ key, grade, project });
+                            }
+                        });
+                    });
+                    return list;
+                });
+
+                const selectedProjectEntry = computed(() => {
+                    return assignedProjectEntries.value.find(item => item.key === leaderProjectId.value) || null;
+                });
+
+                const applicableTeachersForSelectedProject = computed(() => {
+                    if (!selectedProjectEntry.value) return [];
+                    const grade = selectedProjectEntry.value.grade;
+                    return teachers.value.filter(t => t.grade === grade);
+                });
+
+                // Lookup a score record
+                const getScoreRecord = (teacherId, projectId) => {
+                    return assessmentScores.value.find(s => s.teacher_id === teacherId && s.project_id === projectId) || null;
+                };
+
+                // Validate and clamp input scores
+                const validateClampedScore = (teacherId, project) => {
+                    const key = teacherId + '::' + project.id;
+                    const val = tempScores.value[key];
+                    if (val === '' || val === undefined) return;
+                    const num = Number(val);
+                    if (Number.isNaN(num)) {
+                        tempScores.value[key] = '';
+                    } else {
+                        tempScores.value[key] = Math.min(Math.max(num, 0), project.max);
+                    }
+                };
+
+                // Count stats
+                const submittedScoresCount = computed(() => {
+                    return assessmentScores.value.filter(s => s.status === 'submitted').length;
+                });
+
+                const missingTeachersCount = computed(() => {
+                    return summaryRows.value.filter(r => r.missingCount > 0).length;
+                });
+
+                // Calculation calculations for Summary Board
+                const summaryRows = computed(() => {
+                    const rows = teachers.value.map(teacher => {
+                        const applicable = PROJECTS.filter(p => projectAppliesToGrade(p, teacher.grade));
+                        const scoresObj = {};
+                        let teacherTotal = 0;
+                        let classTotal = 0;
+                        let missingCount = 0;
+                        const missingDetails = [];
+
+                        applicable.forEach(p => {
+                            const rec = getScoreRecord(teacher.id, p.id);
+                            if (rec && rec.status === 'submitted') {
+                                scoresObj[p.id] = { score: Number(rec.score || 0), status: rec.status, note: rec.note };
+                                if (p.group === 'teacher') {
+                                    teacherTotal += Number(rec.score || 0);
+                                } else {
+                                    classTotal += Number(rec.score || 0);
+                                }
+                            } else {
+                                scoresObj[p.id] = { score: undefined, status: rec?.status || 'missing' };
+                                missingCount++;
+                                missingDetails.push(p.name);
+                            }
+                        });
+
+                        return {
+                            id: teacher.id,
+                            name: teacher.full_name,
+                            grade: teacher.grade,
+                            stage: gradeStage(teacher.grade),
+                            subject: teacher.subject,
+                            classes: teacher.classes,
+                            scores: scoresObj,
+                            teacherTotal,
+                            classTotal,
+                            missingCount,
+                            missingDetails
+                        };
+                    });
+
+                    // Perform filters
+                    const filtered = rows.filter(row => {
+                        if (filterStage.value && row.stage !== filterStage.value) return false;
+                        if (filterGrade.value && row.grade !== filterGrade.value) return false;
+                        if (filterSubject.value && row.subject !== filterSubject.value) return false;
+                        if (filterKeyword.value && !row.name.includes(filterKeyword.value)) return false;
+                        if (filterStatus.value === 'complete' && row.missingCount > 0) return false;
+                        if (filterStatus.value === 'missing' && row.missingCount === 0) return false;
+                        return true;
+                    });
+
+                    // Dynamic ranking
+                    // 1. Rank Teacher Scores
+                    const sortedTeacher = [...filtered].sort((a, b) => b.teacherTotal - a.teacherTotal);
+                    let lastTeacherTotal = null;
+                    let currentTeacherRank = 0;
+                    const teacherRanks = {};
+                    sortedTeacher.forEach((item, index) => {
+                        if (item.teacherTotal === 0) {
+                            teacherRanks[item.id] = '-';
+                            return;
+                        }
+                        if (lastTeacherTotal === null || item.teacherTotal !== lastTeacherTotal) {
+                            currentTeacherRank = index + 1;
+                            lastTeacherTotal = item.teacherTotal;
+                        }
+                        teacherRanks[item.id] = currentTeacherRank;
+                    });
+
+                    // 2. Rank Class Scores
+                    const sortedClass = [...filtered].sort((a, b) => b.classTotal - a.classTotal);
+                    let lastClassTotal = null;
+                    let currentClassRank = 0;
+                    const classRanks = {};
+                    sortedClass.forEach((item, index) => {
+                        if (item.classTotal === 0) {
+                            classRanks[item.id] = '-';
+                            return;
+                        }
+                        if (lastClassTotal === null || item.classTotal !== lastClassTotal) {
+                            currentClassRank = index + 1;
+                            lastClassTotal = item.classTotal;
+                        }
+                        classRanks[item.id] = currentClassRank;
+                    });
+
+                    // Map ranks back
+                    return filtered.map(row => ({
+                        ...row,
+                        teacherRank: teacherRanks[row.id] || '-',
+                        classRank: classRanks[row.id] || '-'
+                    }));
+                });
+
+                // Target Teacher score for teacher view
+                const targetTeacherRow = computed(() => {
+                    return summaryRows.value.find(r => r.id === teacherViewId.value) || null;
+                });
+
+                const getTeacherApplicableProjects = (row) => {
+                    return PROJECTS.filter(p => projectAppliesToGrade(p, row.grade));
+                };
+
+                // Save Project Assignments
+                const saveAssignments = async () => {
+                    setLoading(true, '正在保存项目分发...');
+                    try {
+                        const payload = [];
+                        for (const [key, leaderId] of Object.entries(tempAssignments.value)) {
+                            const [grade, projectId] = key.split('::');
+                            payload.push({
+                                grade,
+                                project_id: projectId,
+                                leader_id: leaderId || null
+                            });
+                        }
+                        
+                        const { error } = await sbClient
+                            .from('project_assignments')
+                            .upsert(payload, { onConflict: 'grade,project_id' });
+                            
+                        if (error) throw error;
+                        
+                        await loadAllData();
+                        alert('项目分发保存成功！');
+                    } catch (e) {
+                        alert('分发保存失败: ' + e.message);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                // Score Entry Write operations (Leader workspace)
+                const saveVisibleScores = async (status) => {
+                    const entry = selectedProjectEntry.value;
+                    if (!entry) return;
+                    
+                    setLoading(true, status === 'submitted' ? '正在提交项目评分...' : '正在保存评分草稿...');
+                    try {
+                        const payload = [];
+                        applicableTeachersForSelectedProject.value.forEach(teacher => {
+                            const key = teacher.id + '::' + entry.project.id;
+                            const scoreVal = tempScores.value[key];
+                            const noteVal = tempNotes.value[key] || '';
+                            
+                            // Check if score is entered (allow empty for drafts, enforce for submissions)
+                            if (status === 'submitted' && (scoreVal === '' || scoreVal === undefined)) {
+                                throw new Error(`请先填写教师 ${teacher.full_name} 的评分值后再提交！`);
+                            }
+                            
+                            payload.push({
+                                teacher_id: teacher.id,
+                                project_id: entry.project.id,
+                                score: scoreVal !== '' ? Number(scoreVal) : null,
+                                note: noteVal,
+                                status,
+                                scorer_id: currentUser.value.id,
+                                scorer_name: currentUser.value.full_name,
+                                updated_at: new Date().toISOString()
+                            });
+                        });
+
+                        const { error } = await sbClient
+                            .from('assessment_scores')
+                            .upsert(payload, { onConflict: 'teacher_id,project_id' });
+                            
+                        if (error) throw error;
+                        
+                        await loadAllData();
+                        alert(status === 'submitted' ? '项目评分提交成功，已推送至管理员汇总！' : '草稿保存成功！');
+                    } catch (e) {
+                        alert('保存失败: ' + e.message);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                // Delete accounts securely (Admin only)
+                const handleDeleteUser = async (user) => {
+                    if (user.id === currentUser.value.id) return;
+                    if (!confirm(`警告：确认删除人员【${user.full_name}】？这将清除该账号下的所有角色配置及考核得分记录，且不可恢复！`)) return;
+                    
+                    setLoading(true, `正在删除用户 ${user.full_name}...`);
+                    try {
+                        const { error } = await sbClient.rpc('admin_delete_user', { target_user_id: user.id });
+                        if (error) throw error;
+                        
+                        await loadAllData();
+                        alert('账号及关联数据已成功清除！');
+                    } catch (e) {
+                        alert('删除失败: ' + e.message);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                // Excel Imports implementation
+                const handleImportExcel = async (event, mode) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    setLoading(true, '正在解析 Excel 文件...', 10);
+                    const reader = new FileReader();
+                    
+                    reader.onload = async (e) => {
+                        try {
+                            const data = new Uint8Array(e.target.result);
+                            const workbook = XLSX.read(data, { type: 'array' });
+                            const firstSheetName = workbook.SheetNames[0];
+                            const worksheet = workbook.Sheets[firstSheetName];
+                            const rows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                            
+                            if (rows.length === 0) {
+                                throw new Error('Excel 格式错误，或数据表为空！');
+                            }
+                            
+                            setLoading(true, `开始导入，总计 ${rows.length} 条记录...`, 20);
+                            
+                            let importedCount = 0;
+                            
+                            for (let i = 0; i < rows.length; i++) {
+                                const row = rows[i];
+                                const name = String(row["姓名"] || row["教师姓名"] || row["姓名/教师姓名"] || "").trim();
+                                if (!name) continue;
+                                
+                                const roleText = String(row["角色"] || row["角色/身份"] || "").trim();
+                                const roleMap = {
+                                    "管理员": "admin", "admin": "admin",
+                                    "教务主任": "dean", "教研组长": "dean", "dean": "dean",
+                                    "考核组长": "leader", "组长": "leader", "leader": "leader",
+                                    "被考核教师": "teacher", "教师": "teacher", "teacher": "teacher"
+                                };
+                                const role = roleMap[roleText] || (mode === 'teacher' ? 'teacher' : 'teacher');
+                                
+                                const grade = String(row["年级"] || "").trim();
+                                const subject = String(row["学科"] || row["科目"] || "").trim();
+                                const classes = String(row["任课班级"] || row["班级"] || "").trim();
+                                
+                                const username = String(row["账号"] || row["用户名"] || "").trim() || pinyinLike(name);
+                                const password = String(row["密码"] || "").trim() || "123456";
+
+                                // Create user via secure transaction RPC
+                                const { data: newUid, error: createError } = await sbClient.rpc('admin_create_user', {
+                                    username_text: username,
+                                    password_text: password,
+                                    full_name_text: name,
+                                    role_text: role,
+                                    grade_text: grade || null,
+                                    subject_text: subject || null,
+                                    classes_text: classes || null
+                                });
+                                
+                                if (createError) {
+                                    console.error(`Import failed for row ${i + 1} (${name}):`, createError.message);
+                                } else {
+                                    importedCount++;
+                                }
+                                
+                                // Progress animation
+                                const progress = Math.round(20 + (i / rows.length) * 80);
+                                setLoading(true, `正在生成云端账号: (${i + 1}/${rows.length})`, progress);
+                            }
+                            
+                            await loadAllData();
+                            alert(`Excel 导入完成！成功创建/覆盖了 ${importedCount} 个安全账号。`);
+                        } catch (err) {
+                            alert('导入解析失败: ' + err.message);
+                        } finally {
+                            setLoading(false);
+                            event.target.value = ''; // clear input selection
+                        }
+                    };
+                    
+                    reader.readAsArrayBuffer(file);
+                };
+
+                // Generate username pinyin fallback logic
+                const pinyinLike = (name) => {
+                    return String(name || "user").replace(/\s+/g, "").toLowerCase().slice(0, 16) || "user";
+                };
+
+                // Download Teacher excel template
+                const downloadTeacherTemplate = () => {
+                    const rows = [
+                        { "姓名": "张三", "年级": "六年级", "学科": "语文", "任课班级": "1班、2班", "角色": "被考核教师", "账号": "zhangsan", "密码": "123456" },
+                        { "姓名": "李四", "年级": "八年级", "学科": "数学", "任课班级": "1班", "角色": "被考核教师", "账号": "lisi", "密码": "123456" },
+                        { "姓名": "王五", "年级": "九年级", "学科": "英语", "任课班级": "3班、4班", "角色": "被考核教师", "账号": "wangwu", "密码": "123456" }
+                    ];
+                    exportWorkbook("教师年级学科导入模板.xlsx", [{ name: "教师导入", rows }]);
+                };
+
+                const downloadUserTemplate = () => {
+                    const rows = [
+                        { "姓名": "赵主任", "账号": "zhaodean", "密码": "123456", "角色": "教务主任", "年级": "", "学科": "" },
+                        { "姓名": "六年级语文组长", "账号": "g6_yw_leader", "密码": "123456", "角色": "考核组长", "年级": "六年级", "学科": "" },
+                        { "姓名": "九年级考核组长", "账号": "g9_leader", "密码": "123456", "角色": "考核组长", "年级": "九年级", "学科": "" }
+                    ];
+                    exportWorkbook("系统账号角色导入模板.xlsx", [{ name: "账号导入", rows }]);
+                };
+
+                const exportWorkbook = (filename, sheets) => {
+                    const wb = XLSX.utils.book_new();
+                    sheets.forEach(({ name, rows }) => {
+                        const ws = XLSX.utils.json_to_sheet(rows);
+                        XLSX.utils.book_append_sheet(wb, ws, name);
+                    });
+                    XLSX.writeFile(wb, filename);
+                };
+
+                // Export Full Summary Board Excel
+                const exportSummaryExcel = () => {
+                    const rows = summaryRows.value.map(row => {
+                        const item = {
+                            "教师姓名": row.name,
+                            "年级": row.grade,
+                            "年级类型": row.stage,
+                            "任教学科": row.subject,
+                            "任课班级": row.classes || '',
+                            "教师成绩考核总得分": row.teacherTotal.toFixed(1),
+                            "教师考核排名": row.teacherRank,
+                            "班级考核总得分": row.classTotal.toFixed(1),
+                            "班级考核排名": row.classRank,
+                            "数据状态": row.missingCount === 0 ? "项目齐全" : `缺项目 (${row.missingDetails.join('、')})`
+                        };
+
+                        // Map project scores
+                        teacherProjects.forEach(p => {
+                            if (projectAppliesToGrade(p, row.grade)) {
+                                item[`师评-${p.name}得分`] = row.scores[p.id]?.score !== undefined ? row.scores[p.id].score : '未录入';
+                                item[`师评-${p.name}备注`] = row.scores[p.id]?.note || '';
+                            } else {
+                                item[`师评-${p.name}得分`] = '不适用';
+                            }
+                        });
+
+                        classProjects.forEach(p => {
+                            if (projectAppliesToGrade(p, row.grade)) {
+                                item[`班评-${p.name}得分`] = row.scores[p.id]?.score !== undefined ? row.scores[p.id].score : '未录入';
+                                item[`班评-${p.name}备注`] = row.scores[p.id]?.note || '';
+                            } else {
+                                item[`班评-${p.name}得分`] = '不适用';
+                            }
+                        });
+
+                        return item;
+                    });
+
+                    exportWorkbook("全校教师教学质量评价汇总表.xlsx", [{ name: "考核汇总", rows }]);
+                };
+
+                const handleLogout = async () => {
+                    setLoading(true, '正在退出登录...');
+                    try {
+                        await sbClient.auth.signOut();
+                        window.location.href = 'sign-in.html';
+                    } catch (e) {
+                        alert('登出失败: ' + e.message);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
+                onMounted(() => {
+                    checkSession();
+                });
+
+                return {
+                    isLoading,
+                    loadingText,
+                    loadingProgress,
+                    activeTab,
+                    currentUser,
+                    users,
+                    projectAssignments,
+                    assessmentScores,
+                    grades,
+                    teacherProjects,
+                    classProjects,
+                    
+                    tempAssignments,
+                    leaderProjectId,
+                    tempScores,
+                    tempNotes,
+                    
+                    userSearchKey,
+                    userSearchRole,
+                    filteredUsers,
+                    uniqueSubjects,
+                    
+                    filterStage,
+                    filterGrade,
+                    filterSubject,
+                    filterKeyword,
+                    filterStatus,
+                    
+                    teacherViewId,
+                    targetTeacherRow,
+                    
+                    roleLabel,
+                    roleBadgeClass,
+                    scoreStatusBadgeClass,
+                    scoreStatusLabel,
+                    gradeStage,
+                    projectAppliesToGrade,
+                    getGradeProjects,
+                    getGradeProjectsCount,
+                    getGradeLeaders,
+                    projectGroupLabel,
+                    assignedProjectEntries,
+                    selectedProjectEntry,
+                    applicableTeachersForSelectedProject,
+                    getScoreRecord,
+                    validateClampedScore,
+                    submittedScoresCount,
+                    missingTeachersCount,
+                    summaryRows,
+                    getTeacherApplicableProjects,
+                    
+                    saveAssignments,
+                    saveVisibleScores,
+                    handleDeleteUser,
+                    handleImportExcel,
+                    downloadTeacherTemplate,
+                    downloadUserTemplate,
+                    exportSummaryExcel,
+                    handleLogout
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
