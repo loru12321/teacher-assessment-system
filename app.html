@@ -864,6 +864,29 @@
                             </button>
                         </div>
 
+                        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+                            <div class="rounded-xl border border-[#D6CAB2] bg-gray-50/70 p-4">
+                                <p class="text-[11px] text-slate-warm font-bold">当前筛选教师</p>
+                                <p class="text-xl font-black text-ink mt-1">{{ summaryAuditStats.total }} 人</p>
+                            </div>
+                            <div class="rounded-xl border border-[#D6CAB2] bg-green-50 p-4">
+                                <p class="text-[11px] text-green-700 font-bold">项目齐全</p>
+                                <p class="text-xl font-black text-green-700 mt-1">{{ summaryAuditStats.complete }} 人</p>
+                            </div>
+                            <div class="rounded-xl border border-[#D6CAB2] bg-red-50 p-4">
+                                <p class="text-[11px] text-red-600 font-bold">存在缺项</p>
+                                <p class="text-xl font-black text-red-600 mt-1">{{ summaryAuditStats.missing }} 人</p>
+                            </div>
+                            <div class="rounded-xl border border-[#D6CAB2] bg-white p-4">
+                                <p class="text-[11px] text-slate-warm font-bold">教师考核均分</p>
+                                <p class="text-xl font-black text-china-red mt-1">{{ summaryAuditStats.teacherAvg.toFixed(1) }}</p>
+                            </div>
+                            <div class="rounded-xl border border-[#D6CAB2] bg-white p-4">
+                                <p class="text-[11px] text-slate-warm font-bold">班级考核均分</p>
+                                <p class="text-xl font-black text-amber-700 mt-1">{{ summaryAuditStats.classAvg.toFixed(1) }}</p>
+                            </div>
+                        </div>
+
                         <!-- Summary Table -->
                         <div class="overflow-x-auto rounded-xl border border-[#D6CAB2] bg-white">
                             <table class="w-full text-left text-xs border-collapse">
@@ -892,7 +915,8 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="row in summaryRows" :key="row.id" class="border-b border-gray-100 hover:bg-[#F2ECE0]/20">
+                                    <template v-for="row in summaryRows" :key="row.id">
+                                    <tr class="border-b border-gray-100 hover:bg-[#F2ECE0]/20">
                                         <td class="py-3.5 px-4 font-bold text-ink">{{ row.name }}</td>
                                         <td class="py-3.5 px-4 font-semibold text-slate-warm">{{ row.grade }}</td>
                                         <td class="py-3.5 px-4 font-semibold text-slate-warm">{{ row.subject }}</td>
@@ -943,14 +967,54 @@
                                         
                                         <!-- Data Integrity Status -->
                                         <td class="py-3.5 px-4 text-center border-l border-gray-200">
-                                            <span v-if="row.missingCount === 0" class="px-2 py-0.5 rounded-full text-[10px] bg-green-50 text-green-700 font-bold">
-                                                齐全
-                                            </span>
-                                            <span v-else class="px-2 py-0.5 rounded-full text-[10px] bg-red-50 text-red-600 font-bold" :title="row.missingDetails.join('、')">
-                                                缺 {{ row.missingCount }} 项
-                                            </span>
+                                            <div class="flex flex-col items-center gap-1.5">
+                                                <span v-if="row.missingCount === 0" class="px-2 py-0.5 rounded-full text-[10px] bg-green-50 text-green-700 font-bold">
+                                                    齐全
+                                                </span>
+                                                <span v-else class="px-2 py-0.5 rounded-full text-[10px] bg-red-50 text-red-600 font-bold" :title="row.missingDetails.join('、')">
+                                                    缺 {{ row.missingCount }} 项
+                                                </span>
+                                                <button @click="toggleSummaryDetails(row.id)" class="text-[10px] font-extrabold text-china-red hover:underline">
+                                                    {{ expandedSummaryTeacherId === row.id ? '收起明细' : '查看明细' }}
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
+                                    <tr v-if="expandedSummaryTeacherId === row.id" class="bg-[#F7F5F0] border-b border-[#D6CAB2]">
+                                        <td :colspan="3 + teacherProjects.length + classProjects.length + 3" class="p-4">
+                                            <div class="flex flex-col lg:flex-row lg:items-start gap-4">
+                                                <div class="lg:w-56 shrink-0">
+                                                    <p class="text-sm font-extrabold text-ink">{{ row.name }} 项目明细</p>
+                                                    <p class="text-xs text-slate-warm mt-1">{{ row.grade }} · {{ row.subject }} · {{ row.classes || '未填写班级' }}</p>
+                                                    <p class="text-xs mt-2" :class="row.missingCount === 0 ? 'text-green-700' : 'text-red-600'">
+                                                        {{ row.missingCount === 0 ? '全部项目已提交' : '缺项：' + row.missingDetails.join('、') }}
+                                                    </p>
+                                                </div>
+                                                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 flex-1">
+                                                    <div v-for="project in getTeacherApplicableProjects(row)" :key="project.id"
+                                                         class="rounded-lg border border-[#D6CAB2] bg-white p-3">
+                                                        <div class="flex items-center justify-between gap-2">
+                                                            <span class="text-xs font-extrabold text-ink truncate" :title="project.name">{{ project.name }}</span>
+                                                            <span :class="scoreStatusBadgeClass(row.scores[project.id]?.status)" class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0">
+                                                                {{ scoreStatusLabel(row.scores[project.id]?.status) }}
+                                                            </span>
+                                                        </div>
+                                                        <div class="mt-2 flex items-end justify-between gap-2">
+                                                            <p class="text-lg font-black" :class="row.scores[project.id]?.score !== undefined ? 'text-china-red' : 'text-red-500'">
+                                                                {{ row.scores[project.id]?.score !== undefined ? row.scores[project.id].score : '-' }}
+                                                                <span class="text-[10px] text-slate-warm font-bold">/ {{ project.max }}</span>
+                                                            </p>
+                                                            <p class="text-[10px] text-slate-warm font-bold">{{ projectGroupLabel(project) }}</p>
+                                                        </div>
+                                                        <p class="text-[11px] text-slate-warm mt-2 leading-relaxed max-h-8 overflow-hidden">
+                                                            {{ row.scores[project.id]?.note || '暂无填报依据或备注' }}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    </template>
                                     <tr v-if="summaryRows.length === 0">
                                         <td :colspan="3 + teacherProjects.length + classProjects.length + 3" class="py-8 text-center text-slate-warm font-bold">
                                             无对应教师的汇总成绩数据。
@@ -1245,6 +1309,7 @@
                 const filterSubject = ref('');
                 const filterKeyword = ref('');
                 const filterStatus = ref('');
+                const expandedSummaryTeacherId = ref('');
                 
                 // Teacher view state
                 const teacherViewId = ref('');
@@ -1662,6 +1727,23 @@
                     return summaryRows.value.filter(r => r.missingCount > 0).length;
                 });
 
+                const summaryAuditStats = computed(() => {
+                    const rows = summaryRows.value;
+                    const total = rows.length;
+                    const complete = rows.filter(row => row.missingCount === 0).length;
+                    const missing = total - complete;
+                    const teacherAvg = total ? rows.reduce((sum, row) => sum + row.teacherTotal, 0) / total : 0;
+                    const classAvg = total ? rows.reduce((sum, row) => sum + row.classTotal, 0) / total : 0;
+                    return {
+                        total,
+                        complete,
+                        missing,
+                        teacherAvg,
+                        classAvg,
+                        completeRate: total ? Math.round((complete / total) * 100) : 0
+                    };
+                });
+
                 // Calculation calculations for Summary Board
                 const summaryRows = computed(() => {
                     const rows = teachers.value.map(teacher => {
@@ -1764,6 +1846,10 @@
 
                 const getTeacherApplicableProjects = (row) => {
                     return PROJECTS.filter(p => projectAppliesToGrade(p, row.grade));
+                };
+
+                const toggleSummaryDetails = (teacherId) => {
+                    expandedSummaryTeacherId.value = expandedSummaryTeacherId.value === teacherId ? '' : teacherId;
                 };
 
                 const applyDefaultAssignmentsForGrade = (grade, silent = false) => {
@@ -2162,6 +2248,7 @@
                     filterSubject,
                     filterKeyword,
                     filterStatus,
+                    expandedSummaryTeacherId,
                     
                     teacherViewId,
                     targetTeacherRow,
@@ -2190,8 +2277,10 @@
                     clearVisibleScoreInputs,
                     submittedScoresCount,
                     missingTeachersCount,
+                    summaryAuditStats,
                     summaryRows,
                     getTeacherApplicableProjects,
+                    toggleSummaryDetails,
                     
                     applyDefaultAssignmentsForGrade,
                     clearAssignmentsForGrade,
