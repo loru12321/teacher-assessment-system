@@ -809,7 +809,11 @@
                         <span class="icon-box" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 5h12v14H6z" stroke="currentColor" stroke-width="2"/><path d="M9 9h6M9 13h6M9 17h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></span>
                         <div><h2>考核项目分发</h2><p>按组长多选项目：教师成绩考核和班级考核是平行关系，组长只计算自己负责的项目。</p></div>
                     </div>
-                    <button class="btn btn-primary" type="button" id="saveAssignmentsBtn">保存分发</button>
+                    <div class="actions">
+                        <button class="btn" type="button" id="expandAssignmentsBtn">展开年级</button>
+                        <button class="btn" type="button" id="collapseAssignmentsBtn">收起年级</button>
+                        <button class="btn btn-primary" type="button" id="saveAssignmentsBtn">保存分发</button>
+                    </div>
                 </div>
                 <div class="panel-body">
                     <div class="project-list" id="projectAssignmentList"></div>
@@ -868,6 +872,7 @@
                         <div class="field"><label>年级筛选</label><select id="filterGrade"></select></div>
                         <div class="field"><label>学科筛选</label><select id="filterSubject"></select></div>
                         <div class="field"><label>教师搜索</label><input id="filterKeyword" placeholder="输入教师姓名"></div>
+                        <div class="field"><label>项目显示</label><select id="filterProjectScope"><option value="">全部项目</option><option value="teacher">只看教师成绩考核</option><option value="class">只看班级考核</option></select></div>
                         <div class="field"><label>状态</label><select id="filterStatus"><option value="">全部</option><option value="complete">项目齐全</option><option value="missing">有缺项</option></select></div>
                     </div>
                     <div class="grid cols-4" style="margin-bottom:14px;">
@@ -1417,6 +1422,8 @@
         function renderSummary() {
             const data = withRanks(filterSummaryRows(summaryRows()));
             const filtered = data;
+            const projectScope = $("filterProjectScope")?.value || "";
+            const visibleProjects = PROJECTS.filter((project) => !projectScope || project.group === projectScope);
             const avgTeacher = filtered.length ? filtered.reduce((sum, row) => sum + row.teacherTotal, 0) / filtered.length : 0;
             const avgClass = filtered.length ? filtered.reduce((sum, row) => sum + row.classTotal, 0) / filtered.length : 0;
             const missing = filtered.filter((row) => row.teacherMissing.length || row.classMissing.length).length;
@@ -1424,9 +1431,9 @@
             $("summaryAvgTeacherScore").textContent = avgTeacher.toFixed(1);
             $("summaryAvgClassScore").textContent = avgClass.toFixed(1);
             $("summaryMissingCount").textContent = missing;
-            const projectHeaders = PROJECTS.map((p) => `<th><small>${projectGroupLabel(p)}${p.stage ? " · " + p.stage : ""}</small><br>${p.name}<br>${p.max}分</th>`).join("");
+            const projectHeaders = visibleProjects.map((p) => `<th><small>${projectGroupLabel(p)}${p.stage ? " · " + p.stage : ""}</small><br>${p.name}<br>${p.max}分</th>`).join("");
             const rows = filtered.map((row) => {
-                const cells = PROJECTS.map((p) => {
+                const cells = visibleProjects.map((p) => {
                     if (!projectAppliesToTeacher(p, row)) return `<td><span class="badge">不适用</span></td>`;
                     const item = row.projects[p.id];
                     const cls = item.status === "submitted" ? "green" : item.score === "" ? "red" : "orange";
@@ -1444,7 +1451,7 @@
                     <td>${row.teacherMissing.length || row.classMissing.length ? `<span class="badge red">${status}</span>` : `<span class="badge green">项目齐全</span>`}</td>
                 </tr>`;
             }).join("");
-            $("summaryTable").innerHTML = `<thead><tr><th>教师</th><th>年级 / 类型</th><th>学科</th>${projectHeaders}<th>教师成绩考核得分 / 排名</th><th>班级考核得分 / 排名</th><th>状态</th></tr></thead><tbody>${rows || `<tr><td colspan="${PROJECTS.length + 6}">暂无汇总数据。</td></tr>`}</tbody>`;
+            $("summaryTable").innerHTML = `<thead><tr><th>教师</th><th>年级 / 类型</th><th>学科</th>${projectHeaders}<th>教师成绩考核得分 / 排名</th><th>班级考核得分 / 排名</th><th>状态</th></tr></thead><tbody>${rows || `<tr><td colspan="${visibleProjects.length + 6}">暂无汇总数据。</td></tr>`}</tbody>`;
         }
 
         function summaryRows() {
@@ -1746,6 +1753,12 @@
             showToast("项目分发已保存");
         }
 
+        function toggleAssignmentDetails(open) {
+            document.querySelectorAll(".grade-assignment").forEach((node) => {
+                node.open = open;
+            });
+        }
+
         function login(event) {
             event?.preventDefault();
             const role = $("loginRole").value;
@@ -1873,6 +1886,8 @@
             $("userFile").addEventListener("change", (e) => importExcel(e.target.files[0], "user"));
             $("addPersonBtn").addEventListener("click", addOrUpdatePerson);
             $("saveAssignmentsBtn").addEventListener("click", saveAssignments);
+            $("expandAssignmentsBtn").addEventListener("click", () => toggleAssignmentDetails(true));
+            $("collapseAssignmentsBtn").addEventListener("click", () => toggleAssignmentDetails(false));
             document.addEventListener("change", (event) => {
                 const checkbox = event.target.closest?.("[data-assignment-key]");
                 if (!checkbox || !checkbox.checked) return;
@@ -1883,7 +1898,7 @@
             $("leaderProjectSelect").addEventListener("change", (e) => { leaderProjectId = e.target.value; renderScoreEntryTable(); });
             $("saveDraftScoresBtn").addEventListener("click", () => saveVisibleScores("draft"));
             $("submitScoresBtn").addEventListener("click", () => saveVisibleScores("submitted"));
-            ["filterStage", "filterGrade", "filterSubject", "filterKeyword", "filterStatus"].forEach((id) => $(id).addEventListener("input", renderSummary));
+            ["filterStage", "filterGrade", "filterSubject", "filterKeyword", "filterProjectScope", "filterStatus"].forEach((id) => $(id).addEventListener("input", renderSummary));
             $("exportSummaryBtn").addEventListener("click", exportSummary);
             $("exportDataBtn").addEventListener("click", exportDataPackage);
             $("importDataFile").addEventListener("change", (e) => importDataPackage(e.target.files[0]));
