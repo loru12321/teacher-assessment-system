@@ -286,6 +286,28 @@
                             </p>
                         </div>
                     </div>
+                    <div v-if="isAdminLike" class="rounded-xl border border-[#D6CAB2] bg-white px-4 py-3 xl:min-w-[250px]">
+                        <p class="text-[11px] font-extrabold text-slate-warm">组长填报控制</p>
+                        <div class="mt-2 flex items-center justify-between gap-3">
+                            <span class="px-2.5 py-1 rounded-full text-xs font-extrabold border"
+                                  :class="isLeaderFillOpen ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'">
+                                {{ fillControlStatusText }}
+                            </span>
+                            <button v-if="!isLeaderFillOpen"
+                                    @click="updateFillControl(true)"
+                                    :disabled="!canEditSelectedYear"
+                                    class="px-3 py-2 rounded-lg bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center gap-1.5">
+                                <i class="ti ti-player-play"></i>开始填写
+                            </button>
+                            <button v-else
+                                    @click="updateFillControl(false)"
+                                    :disabled="!canEditSelectedYear"
+                                    class="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center gap-1.5">
+                                <i class="ti ti-player-stop"></i>结束填写
+                            </button>
+                        </div>
+                        <p class="text-[11px] text-slate-warm mt-2">只控制考核组长填报；管理员和教务主任仍可查看、兜底管理。</p>
+                    </div>
                 </section>
                 
                 <!-- Header Stats Cards Banner -->
@@ -820,6 +842,11 @@
                             <div>
                                 <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-edit text-china-red text-xl"></i>组长填报工作台</h3>
                                 <p class="text-xs text-slate-warm mt-1">选择负责项目，录入教师分值，保存草稿或提交。</p>
+                                <p class="text-xs font-bold mt-2"
+                                   :class="canScoreSelectedYear ? 'text-green-700' : 'text-red-600'">
+                                    <i :class="canScoreSelectedYear ? 'ti ti-lock-open' : 'ti ti-lock'"></i>
+                                    {{ canScoreSelectedYear ? '当前年度已开放填写。' : '当前年度暂未开放填写，请等待管理员或教务主任开始填写。' }}
+                                </p>
                             </div>
                             
                             <!-- Selection drop down for projects -->
@@ -848,13 +875,13 @@
                                     <p class="text-xs text-slate-warm leading-relaxed mt-1.5">{{ selectedProjectEntry.project.desc }}</p>
                                 </div>
                                 <div class="flex flex-wrap gap-2">
-                                    <button @click="fillMissingScoresWithMax" class="px-3 py-2 rounded-lg border border-[#D6CAB2] bg-white hover:bg-gray-50 text-xs font-bold text-ink flex items-center gap-1.5 transition-all">
+                                    <button @click="fillMissingScoresWithMax" :disabled="!canScoreSelectedYear" class="px-3 py-2 rounded-lg border border-[#D6CAB2] bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-ink flex items-center gap-1.5 transition-all">
                                         <i class="ti ti-select text-china-red"></i>缺项填满分
                                     </button>
-                                    <button @click="fillAllScoresWithMax" class="px-3 py-2 rounded-lg border border-[#D6CAB2] bg-white hover:bg-gray-50 text-xs font-bold text-ink flex items-center gap-1.5 transition-all">
+                                    <button @click="fillAllScoresWithMax" :disabled="!canScoreSelectedYear" class="px-3 py-2 rounded-lg border border-[#D6CAB2] bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-ink flex items-center gap-1.5 transition-all">
                                         <i class="ti ti-star text-china-red"></i>全部填满分
                                     </button>
-                                    <button @click="clearVisibleScoreInputs" class="px-3 py-2 rounded-lg border border-[#D6CAB2] bg-white hover:bg-red-50 hover:text-red-600 text-xs font-bold text-slate-warm flex items-center gap-1.5 transition-all">
+                                    <button @click="clearVisibleScoreInputs" :disabled="!canScoreSelectedYear" class="px-3 py-2 rounded-lg border border-[#D6CAB2] bg-white hover:bg-red-50 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-bold text-slate-warm flex items-center gap-1.5 transition-all">
                                         <i class="ti ti-eraser"></i>清空当前填写
                                     </button>
                                 </div>
@@ -908,11 +935,13 @@
                                         <td class="py-3.5 px-5">
                                             <input type="number" step="0.1" min="0" :max="selectedProjectEntry.project.max" 
                                                    v-model.number="tempScores[teacher.id + '::' + selectedProjectEntry.project.id]" 
+                                                   :disabled="!canScoreSelectedYear"
                                                    class="input-chinese w-28 px-3 py-1.5 rounded-lg font-bold text-center"
                                                    @blur="validateClampedScore(teacher.id, selectedProjectEntry.project)">
                                         </td>
                                         <td class="py-3.5 px-5">
                                             <textarea v-model="tempNotes[teacher.id + '::' + selectedProjectEntry.project.id]" 
+                                                      :disabled="!canScoreSelectedYear"
                                                       rows="1" class="input-chinese w-full px-3 py-1.5 rounded-lg"
                                                       placeholder="说明依据/备注..."></textarea>
                                         </td>
@@ -935,10 +964,10 @@
 
                         <!-- Actions Buttons -->
                         <div v-if="selectedProjectEntry && applicableTeachersForSelectedProject.length > 0" class="flex justify-end gap-3 mt-6 border-t border-gray-100 pt-4">
-                            <button @click="saveVisibleScores('draft')" :disabled="!canEditSelectedYear" class="px-5 py-2.5 border border-[#D6CAB2] hover:bg-[#F2ECE0]/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-sm transition-all text-slate-warm">
+                            <button @click="saveVisibleScores('draft')" :disabled="!canScoreSelectedYear" class="px-5 py-2.5 border border-[#D6CAB2] hover:bg-[#F2ECE0]/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-sm transition-all text-slate-warm">
                                 <i class="ti ti-save mr-1"></i>保存为草稿
                             </button>
-                            <button @click="saveVisibleScores('submitted')" :disabled="!canEditSelectedYear" class="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-1.5 shadow-md shadow-green-100">
+                            <button @click="saveVisibleScores('submitted')" :disabled="!canScoreSelectedYear" class="bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-1.5 shadow-md shadow-green-100">
                                 <i class="ti ti-circle-check"></i>提交本项目
                             </button>
                         </div>
@@ -1476,6 +1505,7 @@
                 
                 const users = ref([]);
                 const yearPeople = ref([]);
+                const fillControls = ref([]);
                 const projectAssignments = ref([]);
                 const assessmentScores = ref([]);
                 
@@ -1550,10 +1580,31 @@
                 const academicYearOptions = computed(() => {
                     const fromData = [
                         ...yearPeople.value.map(item => item.academic_year),
+                        ...fillControls.value.map(item => item.academic_year),
                         ...projectAssignments.value.map(item => item.academic_year),
                         ...assessmentScores.value.map(item => item.academic_year)
                     ].filter(Boolean);
                     return [...new Set([...generateAcademicYearOptions(selectedAcademicYear.value), ...fromData])].sort().reverse();
+                });
+
+                const currentFillControl = computed(() => {
+                    return fillControls.value.find(item => item.academic_year === selectedAcademicYear.value) || null;
+                });
+
+                const isLeaderFillOpen = computed(() => {
+                    return !!currentFillControl.value?.is_open;
+                });
+
+                const fillControlStatusText = computed(() => {
+                    if (isLeaderFillOpen.value) return '填写中';
+                    if (currentFillControl.value?.closed_at) return '已结束';
+                    return '未开始';
+                });
+
+                const canScoreSelectedYear = computed(() => {
+                    if (!canEditSelectedYear.value) return false;
+                    if (isAdminLike.value) return true;
+                    return isLeaderFillOpen.value;
                 });
 
                 const yearModeText = computed(() => {
@@ -1568,8 +1619,52 @@
                     return false;
                 };
 
+                const ensureScoreEditable = (actionText = '保存评分') => {
+                    if (!ensureYearEditable(actionText)) return false;
+                    if (isAdminLike.value || isLeaderFillOpen.value) return true;
+                    alert(`${actionText}已锁定：管理员或教务主任尚未开始 ${selectedAcademicYear.value} 学年度的组长填写。`);
+                    return false;
+                };
+
                 const handleAcademicYearChange = async () => {
                     if (currentUser.value) await loadAllData();
+                };
+
+                const updateFillControl = async (open) => {
+                    if (!ensureYearEditable(open ? '开始填写' : '结束填写')) return;
+                    const message = open
+                        ? `确认开始 ${selectedAcademicYear.value} 学年度的组长填写吗？开始后组长可以保存草稿和提交评分。`
+                        : `确认结束 ${selectedAcademicYear.value} 学年度的组长填写吗？结束后组长不能再保存或提交评分。`;
+                    if (!confirm(message)) return;
+
+                    setLoading(true, open ? '正在开启组长填写...' : '正在结束组长填写...');
+                    try {
+                        const now = new Date().toISOString();
+                        const payload = {
+                            academic_year: selectedAcademicYear.value,
+                            is_open: open,
+                            updated_by: currentUser.value.id,
+                            updated_at: now
+                        };
+                        if (open) {
+                            payload.opened_at = now;
+                            payload.closed_at = null;
+                        } else {
+                            payload.closed_at = now;
+                        }
+
+                        const { error } = await sbClient
+                            .from('fill_controls')
+                            .upsert(payload, { onConflict: 'academic_year' });
+                        if (error) throw error;
+
+                        await loadAllData();
+                        alert(open ? '已开始填写，考核组长现在可以填报。' : '已结束填写，考核组长端已锁定。');
+                    } catch (e) {
+                        alert('填报控制更新失败: ' + e.message);
+                    } finally {
+                        setLoading(false);
+                    }
                 };
 
                 const openWorkspace = (tab, subTab = '') => {
@@ -1640,6 +1735,13 @@
                             .eq('academic_year', selectedAcademicYear.value);
                         if (ypError) throw ypError;
                         yearPeople.value = yearPeopleList || [];
+
+                        const { data: fillControlList, error: fcError } = await sbClient
+                            .from('fill_controls')
+                            .select('*')
+                            .eq('academic_year', selectedAcademicYear.value);
+                        if (fcError) throw fcError;
+                        fillControls.value = fillControlList || [];
 
                         const profileById = new Map((profilesList || []).map(profile => [profile.id, profile]));
                         const scopedUsers = new Map();
@@ -2002,6 +2104,16 @@
                     return teachers.value.filter(t => normalizeGrade(t.grade) === grade);
                 });
 
+                const getApplicableTeachersForEntry = (entry) => {
+                    if (!entry) return [];
+                    const grade = normalizeGrade(entry.grade);
+                    return teachers.value.filter(t => normalizeGrade(t.grade) === grade);
+                };
+
+                const isFilledScoreValue = (value) => {
+                    return value !== '' && value !== undefined && value !== null && !Number.isNaN(Number(value));
+                };
+
                 const selectedProjectScoreStats = computed(() => {
                     const entry = selectedProjectEntry.value;
                     if (!entry) {
@@ -2010,7 +2122,7 @@
                     const total = applicableTeachersForSelectedProject.value.length;
                     const filled = applicableTeachersForSelectedProject.value.filter(teacher => {
                         const value = tempScores.value[teacher.id + '::' + entry.project.id];
-                        return value !== '' && value !== undefined && value !== null && !Number.isNaN(Number(value));
+                        return isFilledScoreValue(value);
                     }).length;
                     return {
                         total,
@@ -2023,6 +2135,30 @@
                 // Lookup a score record
                 const getScoreRecord = (teacherId, projectId) => {
                     return assessmentScores.value.find(s => s.teacher_id === teacherId && s.project_id === projectId) || null;
+                };
+
+                const wouldCompleteAllLeaderWork = (currentEntry) => {
+                    if (!currentEntry || currentUser.value?.role !== 'leader') return false;
+                    return assignedProjectEntries.value.every(entry => {
+                        const entryTeachers = getApplicableTeachersForEntry(entry);
+                        if (entryTeachers.length === 0) return true;
+                        return entryTeachers.every(teacher => {
+                            if (entry.key === currentEntry.key) {
+                                return isFilledScoreValue(tempScores.value[teacher.id + '::' + entry.project.id]);
+                            }
+                            const record = getScoreRecord(teacher.id, entry.project.id);
+                            return record?.status === 'submitted' && isFilledScoreValue(record.score);
+                        });
+                    });
+                };
+
+                const confirmLeaderFinalSubmissionIfNeeded = (entry) => {
+                    if (!wouldCompleteAllLeaderWork(entry)) return true;
+                    const first = confirm('最终确认 1/3：你负责的所有项目都已经填写完毕。请确认所有教师分值完整、无漏项。');
+                    if (!first) return false;
+                    const second = confirm('最终确认 2/3：提交后将进入管理员/教务主任汇总排名。请再次确认分数和备注依据准确。');
+                    if (!second) return false;
+                    return confirm('最终确认 3/3：这是你本年度负责项目全部完成的最后确认。确认提交全部完成结果吗？');
                 };
 
                 // Validate and clamp input scores
@@ -2039,6 +2175,7 @@
                 };
 
                 const fillScoresWithMax = (mode = 'missing') => {
+                    if (!ensureScoreEditable('批量填分')) return;
                     const entry = selectedProjectEntry.value;
                     if (!entry) return;
                     applicableTeachersForSelectedProject.value.forEach(teacher => {
@@ -2061,6 +2198,7 @@
                 };
 
                 const clearVisibleScoreInputs = () => {
+                    if (!ensureScoreEditable('清空填写')) return;
                     const entry = selectedProjectEntry.value;
                     if (!entry) return;
                     if (!confirm('确认清空当前项目下所有教师的页面输入吗？保存后才会覆盖云端数据。')) return;
@@ -2409,7 +2547,7 @@
 
                 // Score Entry Write operations (Leader workspace)
                 const saveVisibleScores = async (status) => {
-                    if (!ensureYearEditable(status === 'submitted' ? '提交评分' : '保存草稿')) return;
+                    if (!ensureScoreEditable(status === 'submitted' ? '提交评分' : '保存草稿')) return;
                     const entry = selectedProjectEntry.value;
                     if (!entry) return;
                     
@@ -2438,6 +2576,10 @@
                                 updated_at: new Date().toISOString()
                             });
                         });
+
+                        if (status === 'submitted' && !confirmLeaderFinalSubmissionIfNeeded(entry)) {
+                            return;
+                        }
 
                         const { error } = await sbClient
                             .from('assessment_scores')
@@ -2691,8 +2833,12 @@
                     isAnnualFillWindow,
                     currentFillAcademicYear,
                     canEditSelectedYear,
+                    canScoreSelectedYear,
+                    isLeaderFillOpen,
+                    fillControlStatusText,
                     yearModeText,
                     handleAcademicYearChange,
+                    updateFillControl,
                     retryLoad,
                     openWorkspace,
                     isAdminLike,
