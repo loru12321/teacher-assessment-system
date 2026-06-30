@@ -7,11 +7,46 @@
     <title>教师考核系统 | 教学质量评价与汇总</title>
     
     <!-- External Libraries -->
+    <script>
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            var string = msg.toLowerCase();
+            var substring = "script error";
+            if (string.indexOf(substring) > -1){
+                alert('Script Error: See Browser Console for Detail');
+            } else {
+                var message = [
+                    'Message: ' + msg,
+                    'URL: ' + url,
+                    'Line: ' + lineNo,
+                    'Column: ' + columnNo,
+                    'Error object: ' + JSON.stringify(error)
+                ].join(' - ');
+                
+                var div = document.createElement('div');
+                div.style.position = 'fixed';
+                div.style.top = '0';
+                div.style.left = '0';
+                div.style.zIndex = '999999';
+                div.style.backgroundColor = 'red';
+                div.style.color = 'white';
+                div.style.padding = '20px';
+                div.style.width = '100%';
+                div.innerText = message;
+                if (document.body) {
+                    document.body.appendChild(div);
+                } else {
+                    document.documentElement.appendChild(div);
+                }
+            }
+            return false;
+        };
+    </script>
     <script src="./assets/tailwindcss.js"></script>
     <script src="./assets/vue.global.js"></script>
     <script src="./assets/xlsx.full.min.js"></script>
     <script src="./assets/supabase.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -787,7 +822,7 @@
 
         const SUPABASE_URL = 'https://qfhkicgfhetcgcvupsxu.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_a2e5g0OkKOPmZbollq1iOA_mSOZxDzc';
-        const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const sbClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // System static projects configuration
         const PROJECTS = [
