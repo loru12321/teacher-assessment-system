@@ -8,9 +8,9 @@
     
     <!-- External Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="./assets/vue.global.js"></script>
     <script src="./assets/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./assets/supabase.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
     
     <!-- Google Fonts -->
@@ -108,6 +108,28 @@
             <span class="font-bold text-lg text-ink">{{ loadingText || '正在处理数据...' }}</span>
             <div v-if="loadingProgress > 0" class="w-64 bg-gray-200 h-2 rounded-full mt-3 overflow-hidden">
                 <div class="bg-china-red h-full transition-all duration-150" :style="{ width: loadingProgress + '%' }"></div>
+            </div>
+        </div>
+
+        <!-- Database Error Card -->
+        <div v-if="dbError" class="fixed inset-0 bg-[#F7F5F0] z-[999] flex flex-col items-center justify-center p-6">
+            <div class="bg-white border border-[#D6CAB2] rounded-3xl p-8 max-w-lg w-full text-center shadow-xl">
+                <span class="w-16 h-16 rounded-full bg-red-50 text-red-600 flex items-center justify-center text-3xl mx-auto mb-4">
+                    <i class="ti ti-alert-triangle"></i>
+                </span>
+                <h3 class="text-xl font-extrabold text-ink mb-3 font-serif">数据库连接及加载失败</h3>
+                <p class="text-xs text-slate-warm leading-relaxed mb-6">
+                    系统在加载数据时发生错误。这通常是因为您的 Supabase 项目尚未导入 SQL 迁移脚本以创建对应的数据表。<br>
+                    <span class="font-bold text-red-500 mt-2 block font-mono text-xs">错误详情: {{ dbError }}</span>
+                </p>
+                <div class="space-y-3">
+                    <button @click="retryLoad" class="w-full py-3 bg-china-red text-white hover:bg-[#7D2E3E] rounded-xl font-bold text-sm shadow-md shadow-red-100 transition-all">
+                        <i class="ti ti-refresh mr-1"></i>重新加载
+                    </button>
+                    <button @click="handleLogout" class="w-full py-2.5 border border-[#D6CAB2] hover:bg-gray-50 rounded-xl font-bold text-xs text-slate-warm transition-all">
+                        <i class="ti ti-logout mr-1"></i>退出登录 / 清除会话
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -796,6 +818,7 @@
                 const loadingProgress = ref(0);
                 const activeTab = ref('admin');
                 const currentUser = ref(null);
+                const dbError = ref('');
                 
                 const users = ref([]);
                 const projectAssignments = ref([]);
@@ -832,6 +855,11 @@
                     isLoading.value = loading;
                     loadingText.value = text;
                     loadingProgress.value = progress;
+                };
+
+                const retryLoad = () => {
+                    dbError.value = '';
+                    checkSession();
                 };
 
                 // Check authorization and fetch initial data
@@ -873,7 +901,7 @@
                         await loadAllData();
                     } catch (e) {
                         console.error('Session validation error:', e);
-                        window.location.href = 'sign-in.html';
+                        dbError.value = e.message || String(e);
                     } finally {
                         setLoading(false);
                     }
@@ -1454,6 +1482,8 @@
                     loadingProgress,
                     activeTab,
                     currentUser,
+                    dbError,
+                    retryLoad,
                     users,
                     projectAssignments,
                     assessmentScores,

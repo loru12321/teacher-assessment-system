@@ -1,5 +1,7 @@
 # Teacher Assessment System
 
+GitHub 直达网址链接: [https://github.com/loru12321/teacher-assessment-system](https://github.com/loru12321/teacher-assessment-system)
+
 Cloud-ready static app for middle-school teacher teaching quality assessment.
 
 The current single-page version supports role login, Excel import for teachers
