@@ -863,7 +863,7 @@
                                         <td class="py-3.5 px-5 font-semibold text-slate-warm">{{ user.classes || '-' }}</td>
                                         <td class="py-3.5 px-5 text-center">
                                             <div class="flex items-center justify-center gap-2">
-                                            <button @click="selectUserForEdit(user)" class="text-china-red hover:underline font-extrabold" :class="canManageUser(user) ? '' : 'opacity-40 cursor-not-allowed'" :disabled="!canManageUser(user)">
+                                            <button @click="selectUserForEdit(user)" class="text-china-red hover:underline font-extrabold" :class="canEditUser(user) ? '' : 'opacity-40 cursor-not-allowed'" :disabled="!canEditUser(user)">
                                                 编辑
                                             </button>
                                             <button @click="selectUserForEdit(user)" class="text-blue-600 hover:underline font-extrabold">
@@ -1982,6 +1982,96 @@
                     return levels[role] || 0;
                 };
 
+                const roleSortRank = (role) => {
+                    const order = {
+                        admin: 1,
+                        dean: 2,
+                        leader: 3,
+                        teacher: 4
+                    };
+                    return order[role] || 99;
+                };
+
+                const gradeSortRank = (grade) => {
+                    const normalized = normalizeGrade(grade);
+                    const order = {
+                        "六年级": 1,
+                        "七年级": 2,
+                        "八年级": 3,
+                        "九年级": 4
+                    };
+                    return order[normalized] || 99;
+                };
+
+                const subjectSortRank = (subject) => {
+                    const normalized = String(subject || '').trim();
+                    const order = {
+                        "语文": 1,
+                        "数学": 2,
+                        "英语": 3,
+                        "物理": 4,
+                        "化学": 5,
+                        "政治": 6,
+                        "道法": 6,
+                        "历史": 7,
+                        "地理": 8,
+                        "生物": 9,
+                        "科学": 10,
+                        "信息技术": 11,
+                        "信息": 11,
+                        "音乐": 12,
+                        "美术": 13,
+                        "体育": 14,
+                        "劳动": 15,
+                        "综合实践": 16,
+                        "心理": 17
+                    };
+                    return order[normalized] || 99;
+                };
+
+                const compareUsersByOrgOrder = (a, b) => {
+                    const roleOrder = roleSortRank(a.role) - roleSortRank(b.role);
+                    if (roleOrder !== 0) return roleOrder;
+
+                    const gradeOrder = gradeSortRank(a.grade) - gradeSortRank(b.grade);
+                    if (gradeOrder !== 0) return gradeOrder;
+
+                    const subjectOrder = subjectSortRank(a.subject) - subjectSortRank(b.subject);
+                    if (subjectOrder !== 0) return subjectOrder;
+
+                    const subjectNameOrder = String(a.subject || '').localeCompare(String(b.subject || ''), 'zh-CN', { numeric: true });
+                    if (subjectNameOrder !== 0) return subjectNameOrder;
+
+                    const classOrder = String(a.classes || '').localeCompare(String(b.classes || ''), 'zh-CN', { numeric: true });
+                    if (classOrder !== 0) return classOrder;
+
+                    const nameOrder = String(a.full_name || '').localeCompare(String(b.full_name || ''), 'zh-CN', { numeric: true });
+                    if (nameOrder !== 0) return nameOrder;
+
+                    return String(a.username || '').localeCompare(String(b.username || ''), 'zh-CN', { numeric: true });
+                };
+
+                // Filtered users list in admin panel
+                const filteredUsers = computed(() => {
+                    return users.value.filter(u => {
+                        const key = String(userSearchKey.value || '').trim();
+                        const matchesSearch = !key ||
+                            String(u.full_name || '').includes(key) ||
+                            String(u.username || '').includes(key) ||
+                            String(u.subject || '').includes(key) ||
+                            String(u.grade || '').includes(key);
+                        const matchesRole = !userSearchRole.value || u.role === userSearchRole.value;
+                        return matchesSearch && matchesRole;
+                    }).sort(compareUsersByOrgOrder);
+                });
+
+                const canEditUser = (user) => {
+                    if (!currentUser.value || !user) return false;
+                    if (currentUser.value.role === 'admin' && user.id === currentUser.value.id) return true;
+                    if (currentUser.value.role === 'admin') return true;
+                    return roleLevel(currentUser.value.role) > roleLevel(user.role);
+                };
+
                 const canManageUser = (user) => {
                     if (!currentUser.value || !user) return false;
                     if (user.id === currentUser.value.id) return false;
@@ -2152,17 +2242,6 @@
                     { key: "grades", name: "年级项目", icon: "ti ti-school", desc: "年级类型和项目数。" },
                     { key: "tools", name: "管理操作", icon: "ti ti-tool", desc: "模板下载和退出。" }
                 ];
-
-                // Filtered users list in admin panel
-                const filteredUsers = computed(() => {
-                    return users.value.filter(u => {
-                        const matchesSearch = !userSearchKey.value || 
-                            u.full_name.includes(userSearchKey.value) || 
-                            u.username.includes(userSearchKey.value);
-                        const matchesRole = !userSearchRole.value || u.role === userSearchRole.value;
-                        return matchesSearch && matchesRole;
-                    }).sort((a, b) => a.role.localeCompare(b.role) || a.username.localeCompare(b.username));
-                });
 
                 const selectedAdminUser = computed(() => {
                     return users.value.find(user => user.id === selectedAdminUserId.value) || null;
@@ -2454,13 +2533,44 @@
                         alert('权限不足：不能创建或修改为等于/高于自己权限的身份。');
                         return;
                     }
-                    if (targetUser && !canManageUser(targetUser)) {
-                        alert('权限不足：不能修改等于/高于自己权限的账号，也不能修改自己的账号。');
+                    if (targetUser && !canEditUser(targetUser)) {
+                        alert('权限不足：不能修改等于/高于自己权限的账号。管理员可修改自己的密码，但不能删除自己。');
                         return;
                     }
 
                     setLoading(true, isExisting ? '正在更新账号与权限...' : '正在创建账号...');
                     try {
+                        if (targetUser?.id === currentUser.value?.id) {
+                            const nextUsername = form.username.trim();
+                            if (nextUsername !== currentUser.value.username) {
+                                alert('当前登录管理员不能在这里直接修改自己的登录账号；可以修改姓名和密码。');
+                                return;
+                            }
+
+                            const nextPassword = String(form.password || '123456').trim() || '123456';
+                            const { error: passwordError } = await sbClient.auth.updateUser({ password: nextPassword });
+                            if (passwordError) throw passwordError;
+
+                            const { error: profileError } = await sbClient
+                                .from('profiles')
+                                .update({
+                                    full_name: form.full_name.trim(),
+                                    role: currentUser.value.role,
+                                    grade: form.grade || null,
+                                    subject: form.subject || null,
+                                    classes: form.classes || null
+                                })
+                                .eq('id', currentUser.value.id);
+                            if (profileError) throw profileError;
+
+                            await loadAllData();
+                            currentUser.value = users.value.find(user => user.id === currentUser.value.id) || currentUser.value;
+                            const updatedSelf = users.value.find(user => user.id === form.id);
+                            if (updatedSelf) selectUserForEdit(updatedSelf);
+                            alert('管理员密码和资料已更新。');
+                            return;
+                        }
+
                         const { data: savedUserId, error } = await sbClient.rpc('admin_create_user', {
                             username_text: form.username.trim(),
                             password_text: String(form.password || '123456').trim() || '123456',
@@ -3098,11 +3208,7 @@
                 const downloadAccountList = () => {
                     const rows = users.value
                         .slice()
-                        .sort((a, b) => {
-                            const gradeOrder = grades.indexOf(a.grade || '') - grades.indexOf(b.grade || '');
-                            if (gradeOrder !== 0) return gradeOrder;
-                            return roleLevel(b.role) - roleLevel(a.role) || String(a.full_name || '').localeCompare(String(b.full_name || ''), 'zh-CN');
-                        })
+                        .sort(compareUsersByOrgOrder)
                         .map(user => ({
                             "学年度": selectedAcademicYear.value,
                             "姓名": user.full_name || '',
@@ -3258,6 +3364,7 @@
                     
                     roleLabel,
                     roleLevel,
+                    canEditUser,
                     canManageUser,
                     roleBadgeClass,
                     scoreStatusBadgeClass,
