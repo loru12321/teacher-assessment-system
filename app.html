@@ -2104,6 +2104,7 @@
 
                 const scoreChangeClass = (record) => {
                     if (!record?.change_tag) return '';
+                    if (record.change_tag === 'system_sync') return 'bg-blue-50 border-blue-300';
                     if (record.change_tag === 'admin_override') return 'bg-purple-50 border-purple-300';
                     if (record.change_tag === 'leader_revised') return 'bg-amber-50 border-amber-300';
                     if (record.change_tag === 'completed') return 'bg-green-50 border-green-300';
@@ -2112,6 +2113,7 @@
 
                 const scoreChangeLabel = (record) => {
                     if (!record?.change_tag) return '';
+                    if (record.change_tag === 'system_sync') return '系统自动同步';
                     if (record.change_tag === 'admin_override') return '管理员/主任更改';
                     if (record.change_tag === 'leader_revised') return '组长复改';
                     if (record.change_tag === 'completed') return '完成提交';
