@@ -534,8 +534,12 @@
                                     <p class="text-xs text-slate-warm mt-1">下载教师年级、学科、任课班级模板。</p>
                                 </button>
                                 <button @click="downloadUserTemplate" class="w-full px-4 py-3 rounded-xl border border-[#D6CAB2] bg-gray-50 hover:bg-white text-left transition-all">
-                                    <span class="text-sm font-extrabold text-ink flex items-center gap-2"><i class="ti ti-id text-china-red"></i>角色账号模板</span>
+                                    <span class="text-sm font-extrabold text-ink flex items-center gap-2"><i class="ti ti-id text-china-red"></i>角色人员模板</span>
                                     <p class="text-xs text-slate-warm mt-1">默认 6-9 年级各 4 名考核组长，可按实际人数增删行。</p>
+                                </button>
+                                <button @click="downloadAccountList" class="w-full px-4 py-3 rounded-xl border border-[#D6CAB2] bg-gray-50 hover:bg-white text-left transition-all">
+                                    <span class="text-sm font-extrabold text-ink flex items-center gap-2"><i class="ti ti-address-book text-china-red"></i>现有账号清单</span>
+                                    <p class="text-xs text-slate-warm mt-1">导出当前学年度人员名单、系统账号和登录说明。</p>
                                 </button>
                                 <button @click="applyDefaultAssignments(); activeTab = 'admin'" class="w-full px-4 py-3 rounded-xl border border-[#D6CAB2] bg-gray-50 hover:bg-white text-left transition-all">
                                     <span class="text-sm font-extrabold text-ink flex items-center gap-2"><i class="ti ti-wand text-china-red"></i>生成默认项目分发</span>
@@ -569,11 +573,13 @@
                             <div>
                                 <div class="flex items-center justify-between mb-4">
                                     <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-file-excel text-china-red text-xl"></i>导入教师名单</h3>
-                                    <button @click="downloadTeacherTemplate" class="text-xs text-china-red hover:underline font-bold"><i class="ti ti-download mr-1"></i>下载模板</button>
+                                    <div class="flex items-center gap-3">
+                                        <button @click="downloadTeacherTemplate" class="text-xs text-china-red hover:underline font-bold"><i class="ti ti-download mr-1"></i>下载模板</button>
+                                        <button @click="downloadAccountList" class="text-xs text-ink hover:text-china-red font-bold"><i class="ti ti-address-book mr-1"></i>账号清单</button>
+                                    </div>
                                 </div>
                                 <p class="text-xs text-slate-warm leading-relaxed mb-6">
-                                    导入年级、学科及教师姓名名单。教师导入会统一按<strong class="text-ink">被考核教师</strong>处理；
-                                    <strong class="text-china-red">年级、学科、账号</strong>请按模板填写，账号只能用英文、数字或下划线。
+                                    只导入<strong class="text-ink">姓名、年级、学科、任课班级</strong>。系统会根据姓名自动生成英文系统账号，默认密码为 123456。
                                 </p>
                             </div>
                             <label class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#D6CAB2] bg-gray-50/50 hover:bg-[#F2ECE0]/30 cursor-pointer transition-all font-bold text-sm">
@@ -587,11 +593,13 @@
                             <div>
                                 <div class="flex items-center justify-between mb-4">
                                     <h3 class="text-lg font-extrabold flex items-center gap-2"><i class="ti ti-users-group text-china-red text-xl"></i>导入系统账号</h3>
-                                    <button @click="downloadUserTemplate" class="text-xs text-china-red hover:underline font-bold"><i class="ti ti-download mr-1"></i>下载模板</button>
+                                    <div class="flex items-center gap-3">
+                                        <button @click="downloadUserTemplate" class="text-xs text-china-red hover:underline font-bold"><i class="ti ti-download mr-1"></i>下载模板</button>
+                                        <button @click="downloadAccountList" class="text-xs text-ink hover:text-china-red font-bold"><i class="ti ti-address-book mr-1"></i>账号清单</button>
+                                    </div>
                                 </div>
                                 <p class="text-xs text-slate-warm leading-relaxed mb-6">
-                                    批量导入全校管理员、教务主任、考核组长。模板默认每个年级 4 名考核组长；实际上传几名，系统就按几名参与项目分发。
-                                    <strong class="text-china-red">账号列请填英文、数字或下划线，不要填中文姓名。</strong>
+                                    批量导入全校管理员、教务主任、考核组长。模板只填写姓名、角色、年级等中文信息；英文系统账号由系统自动生成。
                                 </p>
                                 <div class="mb-5 rounded-xl border border-[#D6CAB2] bg-gray-50/70 p-3">
                                     <div class="flex items-center justify-between gap-3">
@@ -607,12 +615,12 @@
                                             <input v-model.number="defaultLeaderCount" type="number" min="1" max="12" class="input-chinese w-16 h-8 rounded-lg text-center text-xs font-bold">
                                         </div>
                                     </div>
-                                    <p class="text-[11px] text-slate-warm mt-2">只影响下载的账号模板；系统实际人数仍以你上传的 Excel 行数为准。</p>
+                                    <p class="text-[11px] text-slate-warm mt-2">只影响下载的角色人员模板；系统实际人数仍以你上传的 Excel 行数为准。</p>
                                 </div>
                             </div>
                             <label class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#D6CAB2] bg-gray-50/50 hover:bg-[#F2ECE0]/30 cursor-pointer transition-all font-bold text-sm">
                                 <i class="ti ti-upload"></i>
-                                <span>选择 Excel 并导入账号</span>
+                                <span>选择 Excel 并导入角色人员</span>
                                 <input type="file" accept=".xlsx,.xls" class="hidden" :disabled="!canEditSelectedYear" @change="e => handleImportExcel(e, 'user')">
                             </label>
                         </div>
@@ -1487,8 +1495,12 @@
                                 <p class="text-xs text-slate-warm mt-1">用于导入被考核教师、年级、学科和任教班级。</p>
                             </button>
                             <button @click="downloadUserTemplate" class="px-4 py-3 rounded-xl border border-[#D6CAB2] bg-gray-50 hover:bg-white text-left">
-                                <span class="text-sm font-extrabold text-ink"><i class="ti ti-download text-china-red mr-1"></i>下载角色账号模板</span>
-                                <p class="text-xs text-slate-warm mt-1">用于导入管理员、教务主任、考核组长和教师账号；默认每年级 4 名组长。</p>
+                                <span class="text-sm font-extrabold text-ink"><i class="ti ti-download text-china-red mr-1"></i>下载角色人员模板</span>
+                                <p class="text-xs text-slate-warm mt-1">用于导入管理员、教务主任和考核组长；默认每年级 4 名组长。</p>
+                            </button>
+                            <button @click="downloadAccountList" class="px-4 py-3 rounded-xl border border-[#D6CAB2] bg-gray-50 hover:bg-white text-left">
+                                <span class="text-sm font-extrabold text-ink"><i class="ti ti-address-book text-china-red mr-1"></i>下载现有账号清单</span>
+                                <p class="text-xs text-slate-warm mt-1">导出姓名、身份、年级学科、系统账号和登录说明。</p>
                             </button>
                             <button @click="handleLogout" class="px-4 py-3 rounded-xl border border-red-200 bg-red-50 hover:bg-white text-left">
                                 <span class="text-sm font-extrabold text-red-600"><i class="ti ti-logout mr-1"></i>退出系统</span>
@@ -2107,7 +2119,7 @@
                 });
 
                 const functionCards = [
-                    { tab: "admin", subTab: "imports", title: "教师与角色导入", icon: "ti ti-file-import", iconClass: "bg-blue-50 text-blue-600", desc: "导入教师年级学科、任课班级；导入管理员、教务主任、考核组长和教师账号，模板默认每年级 4 名组长。" },
+                    { tab: "admin", subTab: "imports", title: "教师与角色导入", icon: "ti ti-file-import", iconClass: "bg-blue-50 text-blue-600", desc: "导入教师年级学科、任课班级；导入管理员、教务主任和考核组长，系统自动生成英文账号。" },
                     { tab: "admin", subTab: "assignments", title: "考核项目分发", icon: "ti ti-git-branch", iconClass: "bg-china-red/10 text-china-red", desc: "按 6-9 年级为不同考核组长分配不同项目，负责项目不出现在 Excel 导入表中。" },
                     { tab: "admin", subTab: "people", title: "人员账号权限", icon: "ti ti-user-cog", iconClass: "bg-blue-50 text-blue-600", desc: "搜索、查看和修改账号、密码、身份、年级、学科、班级和权限。" },
                     { tab: "leader", subTab: "", title: "组长项目填报", icon: "ti ti-edit", iconClass: "bg-green-50 text-green-700", desc: "考核组长进入后只看到自己负责的项目，对所有适用教师录入分值和说明。" },
@@ -2909,7 +2921,7 @@
                                     continue;
                                 }
                                 
-                                const rawUsername = String(row["账号"] || row["用户名"] || "").trim();
+                                const rawUsername = "";
                                 const usernameResult = makeImportUsername(rawUsername, { name, role, grade, rowIndex: i, leaderCounters, usedUsernames });
                                 const username = usernameResult.username;
                                 if (usernameResult.warning) importWarnings.push(`第 ${i + 2} 行【${name}】：${usernameResult.warning}`);
@@ -2978,6 +2990,15 @@
                     return map[normalized] || "gx";
                 };
 
+                const stableAccountHash = (text) => {
+                    let hash = 5381;
+                    const source = String(text || 'user');
+                    for (let i = 0; i < source.length; i++) {
+                        hash = ((hash << 5) + hash) ^ source.charCodeAt(i);
+                    }
+                    return Math.abs(hash >>> 0).toString(36).slice(0, 6);
+                };
+
                 const makeImportUsername = (rawUsername, context) => {
                     const raw = String(rawUsername || '').trim();
                     const cleaned = raw
@@ -2989,6 +3010,14 @@
                         .toLowerCase();
                     const isSafeRaw = /^[a-zA-Z][a-zA-Z0-9_]{1,31}$/.test(cleaned);
                     let base = isSafeRaw ? cleaned : '';
+
+                    if (!base && context.role === 'admin') {
+                        base = 'admin';
+                    }
+
+                    if (!base && context.role === 'dean') {
+                        base = 'dean';
+                    }
 
                     if (!base && context.role === 'leader') {
                         const code = gradeCode(context.grade);
@@ -3006,7 +3035,9 @@
                     if (!base) {
                         const code = context.role === 'teacher' ? 'teacher' : context.role || 'user';
                         const namePart = pinyinLike(context.name);
-                        base = namePart && namePart !== 'user' ? `${code}_${namePart}` : `${code}_${context.rowIndex + 1}`;
+                        base = namePart && namePart !== 'user'
+                            ? `${code}_${namePart}`
+                            : `${code}_${stableAccountHash(`${context.name}_${context.grade}`)}`;
                     }
 
                     let username = base.slice(0, 32);
@@ -3026,9 +3057,9 @@
                 // Download Teacher excel template
                 const downloadTeacherTemplate = () => {
                     const rows = [
-                        { "学年度": selectedAcademicYear.value, "姓名": "张三", "年级": "六年级", "学科": "语文", "任课班级": "1班、2班", "角色": "被考核教师", "账号": "zhangsan", "密码": "123456", "账号要求": "英文/数字/下划线，不能填中文姓名" },
-                        { "学年度": selectedAcademicYear.value, "姓名": "李四", "年级": "八年级", "学科": "数学", "任课班级": "1班", "角色": "被考核教师", "账号": "lisi", "密码": "123456", "账号要求": "英文/数字/下划线，不能填中文姓名" },
-                        { "学年度": selectedAcademicYear.value, "姓名": "王五", "年级": "九年级", "学科": "英语", "任课班级": "3班、4班", "角色": "被考核教师", "账号": "wangwu", "密码": "123456", "账号要求": "英文/数字/下划线，不能填中文姓名" }
+                        { "学年度": selectedAcademicYear.value, "姓名": "张三", "年级": "六年级", "学科": "语文", "任课班级": "1班、2班", "角色": "被考核教师", "密码": "123456" },
+                        { "学年度": selectedAcademicYear.value, "姓名": "李四", "年级": "八年级", "学科": "数学", "任课班级": "1班", "角色": "被考核教师", "密码": "123456" },
+                        { "学年度": selectedAcademicYear.value, "姓名": "王五", "年级": "九年级", "学科": "英语", "任课班级": "3班、4班", "角色": "被考核教师", "密码": "123456" }
                     ];
                     exportWorkbook("教师年级学科导入模板.xlsx", [{ name: "教师导入", rows }]);
                 };
@@ -3036,30 +3067,23 @@
                 const downloadUserTemplate = () => {
                     const leaderCount = Math.max(1, Math.min(12, Number(defaultLeaderCount.value) || 4));
                     const rows = [
-                        { "学年度": selectedAcademicYear.value, "姓名": "系统管理员", "账号": "admin", "密码": "123456", "角色": "管理员", "年级": "", "学科": "", "账号要求": "英文/数字/下划线，不能填中文姓名" },
-                        { "学年度": selectedAcademicYear.value, "姓名": "教务主任", "账号": "dean", "密码": "123456", "角色": "教务主任", "年级": "", "学科": "", "账号要求": "英文/数字/下划线，不能填中文姓名" },
+                        { "学年度": selectedAcademicYear.value, "姓名": "系统管理员", "密码": "123456", "角色": "管理员", "年级": "", "学科": "" },
+                        { "学年度": selectedAcademicYear.value, "姓名": "教务主任", "密码": "123456", "角色": "教务主任", "年级": "", "学科": "" },
                     ];
-                    const gradeSeeds = [
-                        ["六年级", "g6"],
-                        ["七年级", "g7"],
-                        ["八年级", "g8"],
-                        ["九年级", "g9"]
-                    ];
-                    gradeSeeds.forEach(([grade, prefix]) => {
+                    const gradeSeeds = ["六年级", "七年级", "八年级", "九年级"];
+                    gradeSeeds.forEach((grade) => {
                         for (let i = 1; i <= leaderCount; i++) {
                             rows.push({
                                 "学年度": selectedAcademicYear.value,
                                 "姓名": `${grade}考核组长${i}`,
-                                "账号": `${prefix}_leader_${i}`,
                                 "密码": "123456",
                                 "角色": "考核组长",
                                 "年级": grade,
-                                "学科": "",
-                                "账号要求": "英文/数字/下划线，不能填中文姓名"
+                                "学科": ""
                             });
                         }
                     });
-                    exportWorkbook(`系统账号角色导入模板_每年级${leaderCount}名组长.xlsx`, [{ name: "账号导入", rows }]);
+                    exportWorkbook(`系统角色人员导入模板_每年级${leaderCount}名组长.xlsx`, [{ name: "角色人员导入", rows }]);
                 };
 
                 const exportWorkbook = (filename, sheets) => {
@@ -3069,6 +3093,29 @@
                         XLSX.utils.book_append_sheet(wb, ws, name);
                     });
                     XLSX.writeFile(wb, filename);
+                };
+
+                const downloadAccountList = () => {
+                    const rows = users.value
+                        .slice()
+                        .sort((a, b) => {
+                            const gradeOrder = grades.indexOf(a.grade || '') - grades.indexOf(b.grade || '');
+                            if (gradeOrder !== 0) return gradeOrder;
+                            return roleLevel(b.role) - roleLevel(a.role) || String(a.full_name || '').localeCompare(String(b.full_name || ''), 'zh-CN');
+                        })
+                        .map(user => ({
+                            "学年度": selectedAcademicYear.value,
+                            "姓名": user.full_name || '',
+                            "身份": roleLabel(user.role),
+                            "年级": user.grade || '',
+                            "学科": user.subject || '',
+                            "任课班级": user.classes || '',
+                            "系统账号": user.username || '',
+                            "登录邮箱": user.username ? `${user.username}@school.com` : '',
+                            "密码说明": "默认 123456；如管理员已重置，请以最近设置为准"
+                        }));
+
+                    exportWorkbook(`${selectedAcademicYear.value}现有人员系统账号清单.xlsx`, [{ name: "账号清单", rows }]);
                 };
 
                 // Export Full Summary Board Excel
@@ -3255,6 +3302,7 @@
                     handleImportExcel,
                     downloadTeacherTemplate,
                     downloadUserTemplate,
+                    downloadAccountList,
                     exportSummaryExcel,
                     handleLogout
                 };
