@@ -253,25 +253,25 @@
             <main class="flex-grow p-6 lg:p-8 flex flex-col gap-6 max-w-7xl mx-auto w-full overflow-x-hidden">
 
                 <!-- Academic Year Control -->
-                <section class="premium-card p-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
-                    <div class="flex items-start gap-4">
+                <section class="premium-card p-5 grid grid-cols-1 xl:grid-cols-[minmax(260px,1.15fr)_minmax(420px,1.8fr)_minmax(250px,1fr)_minmax(250px,1fr)] gap-4 items-stretch">
+                    <div class="flex items-center gap-4 min-w-0">
                         <span class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl shrink-0">
                             <i class="ti ti-calendar-stats"></i>
                         </span>
-                        <div>
+                        <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
-                                <h2 class="text-lg font-black text-ink">学年度考核</h2>
+                                <h2 class="text-lg font-black text-ink whitespace-nowrap">学年度考核</h2>
                                 <span class="px-2.5 py-1 rounded-full text-xs font-extrabold border"
                                       :class="canEditSelectedYear ? 'bg-green-50 text-green-700 border-green-200' : 'bg-amber-50 text-amber-700 border-amber-200'">
                                     {{ yearModeText }}
                                 </span>
                             </div>
-                            <p class="text-xs text-slate-warm mt-1 leading-relaxed">
-                                每个学年度独立维护教师、考核组长、项目分发和评分记录；教师与组长可切换查看自己的历史填报与成绩。
+                            <p class="text-xs text-slate-warm mt-1 leading-relaxed font-semibold">
+                                <strong class="text-ink">年度独立：</strong>教师、组长、项目分发、评分记录分年度保存；可切换查看历史。
                             </p>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-[minmax(180px,220px)_1fr] gap-3 xl:min-w-[520px]">
+                    <div class="grid grid-cols-1 sm:grid-cols-[minmax(180px,220px)_1fr] gap-3">
                         <label class="block">
                             <span class="text-[11px] font-extrabold text-slate-warm">当前学年度</span>
                             <select v-model="selectedAcademicYear" @change="handleAcademicYearChange"
@@ -281,12 +281,12 @@
                         </label>
                         <div class="rounded-xl bg-gray-50 border border-[#D6CAB2] px-4 py-3">
                             <p class="text-[11px] font-extrabold text-slate-warm">填报规则</p>
-                            <p class="text-xs font-bold text-ink mt-1">
-                                每年 7、8 月只能填写 {{ currentFillAcademicYear }} 学年度；其他月份默认进入最近一次 7、8 月填报的数据，只读查看。
+                            <p class="text-xs font-bold text-ink mt-1 leading-relaxed">
+                                <strong class="text-china-red">7、8 月</strong>只能填写 <strong>{{ currentFillAcademicYear }}</strong>；其他月份默认进入最近一次填报数据，<strong class="text-amber-700">只读查看</strong>。
                             </p>
                         </div>
                     </div>
-                    <div class="rounded-xl border border-[#D6CAB2] bg-white px-4 py-3 xl:min-w-[260px]">
+                    <div class="rounded-xl border border-[#D6CAB2] bg-white px-4 py-3">
                         <div class="flex items-center justify-between gap-3">
                             <div>
                                 <p class="text-[11px] font-extrabold text-slate-warm">消息提醒</p>
@@ -298,7 +298,7 @@
                             </button>
                         </div>
                     </div>
-                    <div v-if="isAdminLike" class="rounded-xl border border-[#D6CAB2] bg-white px-4 py-3 xl:min-w-[250px]">
+                    <div v-if="isAdminLike" class="rounded-xl border border-[#D6CAB2] bg-white px-4 py-3">
                         <p class="text-[11px] font-extrabold text-slate-warm">组长填报控制</p>
                         <div class="mt-2 flex items-center justify-between gap-3">
                             <span class="px-2.5 py-1 rounded-full text-xs font-extrabold border"
@@ -590,6 +590,7 @@
                                 </div>
                                 <p class="text-xs text-slate-warm leading-relaxed mb-6">
                                     批量导入全校管理员、教务主任、考核组长。模板默认每个年级 4 名考核组长；实际上传几名，系统就按几名参与项目分发。
+                                    <strong class="text-china-red">账号列请填英文、数字或下划线，不要填中文姓名。</strong>
                                 </p>
                                 <div class="mb-5 rounded-xl border border-[#D6CAB2] bg-gray-50/70 p-3">
                                     <div class="flex items-center justify-between gap-3">
@@ -2867,6 +2868,11 @@
                             setLoading(true, `开始导入，总计 ${rows.length} 条记录...`, 20);
                             
                             let importedCount = 0;
+                            let skippedCount = 0;
+                            const importErrors = [];
+                            const importWarnings = [];
+                            const usedUsernames = new Set();
+                            const leaderCounters = {};
                             
                             for (let i = 0; i < rows.length; i++) {
                                 const row = rows[i];
@@ -2882,7 +2888,8 @@
                                 };
                                 const role = roleMap[roleText] || (mode === 'teacher' ? 'teacher' : 'teacher');
                                 if (currentUser.value?.role !== 'admin' && roleLevel(currentUser.value?.role) <= roleLevel(role)) {
-                                    console.error(`Import skipped for row ${i + 1} (${name}): insufficient role permission`);
+                                    skippedCount++;
+                                    importErrors.push(`第 ${i + 2} 行【${name}】：权限不足，不能导入等于或高于自己权限的角色。`);
                                     continue;
                                 }
                                 
@@ -2890,7 +2897,10 @@
                                 const subject = String(row["学科"] || row["科目"] || "").trim();
                                 const classes = String(row["任课班级"] || row["班级"] || "").trim();
                                 
-                                const username = String(row["账号"] || row["用户名"] || "").trim() || pinyinLike(name);
+                                const rawUsername = String(row["账号"] || row["用户名"] || "").trim();
+                                const usernameResult = makeImportUsername(rawUsername, { name, role, grade, rowIndex: i, leaderCounters, usedUsernames });
+                                const username = usernameResult.username;
+                                if (usernameResult.warning) importWarnings.push(`第 ${i + 2} 行【${name}】：${usernameResult.warning}`);
                                 const password = String(row["密码"] || "").trim() || "123456";
 
                                 // Create user via secure transaction RPC
@@ -2905,7 +2915,8 @@
                                 });
                                 
                                 if (createError) {
-                                    console.error(`Import failed for row ${i + 1} (${name}):`, createError.message);
+                                    skippedCount++;
+                                    importErrors.push(`第 ${i + 2} 行【${name} / ${username}】：${createError.message}`);
                                 } else {
                                     await upsertYearPerson(newUid, { role, grade, subject, classes });
                                     importedCount++;
@@ -2917,7 +2928,12 @@
                             }
                             
                             await loadAllData();
-                            alert(`Excel 导入完成！成功创建/覆盖了 ${importedCount} 个安全账号。`);
+                            const message = [
+                                `Excel 导入完成：成功创建/覆盖 ${importedCount} 个账号，跳过/失败 ${skippedCount} 条。`,
+                                importWarnings.length ? `\n自动修正：\n${importWarnings.slice(0, 8).join('\n')}${importWarnings.length > 8 ? `\n...另有 ${importWarnings.length - 8} 条` : ''}` : '',
+                                importErrors.length ? `\n错误明细：\n${importErrors.slice(0, 8).join('\n')}${importErrors.length > 8 ? `\n...另有 ${importErrors.length - 8} 条` : ''}` : ''
+                            ].filter(Boolean).join('\n');
+                            alert(message);
                         } catch (err) {
                             alert('导入解析失败: ' + err.message);
                         } finally {
@@ -2931,15 +2947,71 @@
 
                 // Generate username pinyin fallback logic
                 const pinyinLike = (name) => {
-                    return String(name || "user").replace(/\s+/g, "").toLowerCase().slice(0, 16) || "user";
+                    return String(name || "user")
+                        .normalize('NFKD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .replace(/[^a-zA-Z0-9_]+/g, '')
+                        .toLowerCase()
+                        .slice(0, 16) || "user";
+                };
+
+                const gradeCode = (grade) => {
+                    const normalized = normalizeGrade(grade);
+                    const map = { "六年级": "g6", "七年级": "g7", "八年级": "g8", "九年级": "g9" };
+                    return map[normalized] || "gx";
+                };
+
+                const makeImportUsername = (rawUsername, context) => {
+                    const raw = String(rawUsername || '').trim();
+                    const cleaned = raw
+                        .replace(/@school\.com$/i, '')
+                        .replace(/\s+/g, '_')
+                        .replace(/[^a-zA-Z0-9_]/g, '')
+                        .replace(/_+/g, '_')
+                        .replace(/^_+|_+$/g, '')
+                        .toLowerCase();
+                    const isSafeRaw = /^[a-zA-Z][a-zA-Z0-9_]{1,31}$/.test(cleaned);
+                    let base = isSafeRaw ? cleaned : '';
+
+                    if (!base && context.role === 'leader') {
+                        const code = gradeCode(context.grade);
+                        const gradeKey = normalizeGrade(context.grade) || 'unknown';
+                        const matchNo = String(context.name || raw).match(/(\d+|[一二三四五六七八九十])\s*$/);
+                        const chineseNoMap = { "一": 1, "二": 2, "三": 3, "四": 4, "五": 5, "六": 6, "七": 7, "八": 8, "九": 9, "十": 10 };
+                        let no = matchNo ? (Number(matchNo[1]) || chineseNoMap[matchNo[1]]) : null;
+                        if (!no) {
+                            context.leaderCounters[gradeKey] = (context.leaderCounters[gradeKey] || 0) + 1;
+                            no = context.leaderCounters[gradeKey];
+                        }
+                        base = `${code}_leader_${no}`;
+                    }
+
+                    if (!base) {
+                        const code = context.role === 'teacher' ? 'teacher' : context.role || 'user';
+                        const namePart = pinyinLike(context.name);
+                        base = namePart && namePart !== 'user' ? `${code}_${namePart}` : `${code}_${context.rowIndex + 1}`;
+                    }
+
+                    let username = base.slice(0, 32);
+                    let suffix = 2;
+                    while (context.usedUsernames.has(username)) {
+                        username = `${base.slice(0, 28)}_${suffix}`;
+                        suffix++;
+                    }
+                    context.usedUsernames.add(username);
+
+                    return {
+                        username,
+                        warning: raw && raw !== username ? `账号“${raw}”包含中文或非法字符，已自动改为可登录账号“${username}”。` : ''
+                    };
                 };
 
                 // Download Teacher excel template
                 const downloadTeacherTemplate = () => {
                     const rows = [
-                        { "学年度": selectedAcademicYear.value, "姓名": "张三", "年级": "六年级", "学科": "语文", "任课班级": "1班、2班", "角色": "被考核教师", "账号": "zhangsan", "密码": "123456" },
-                        { "学年度": selectedAcademicYear.value, "姓名": "李四", "年级": "八年级", "学科": "数学", "任课班级": "1班", "角色": "被考核教师", "账号": "lisi", "密码": "123456" },
-                        { "学年度": selectedAcademicYear.value, "姓名": "王五", "年级": "九年级", "学科": "英语", "任课班级": "3班、4班", "角色": "被考核教师", "账号": "wangwu", "密码": "123456" }
+                        { "学年度": selectedAcademicYear.value, "姓名": "张三", "年级": "六年级", "学科": "语文", "任课班级": "1班、2班", "角色": "被考核教师", "账号": "zhangsan", "密码": "123456", "账号要求": "英文/数字/下划线，不能填中文姓名" },
+                        { "学年度": selectedAcademicYear.value, "姓名": "李四", "年级": "八年级", "学科": "数学", "任课班级": "1班", "角色": "被考核教师", "账号": "lisi", "密码": "123456", "账号要求": "英文/数字/下划线，不能填中文姓名" },
+                        { "学年度": selectedAcademicYear.value, "姓名": "王五", "年级": "九年级", "学科": "英语", "任课班级": "3班、4班", "角色": "被考核教师", "账号": "wangwu", "密码": "123456", "账号要求": "英文/数字/下划线，不能填中文姓名" }
                     ];
                     exportWorkbook("教师年级学科导入模板.xlsx", [{ name: "教师导入", rows }]);
                 };
@@ -2947,8 +3019,8 @@
                 const downloadUserTemplate = () => {
                     const leaderCount = Math.max(1, Math.min(12, Number(defaultLeaderCount.value) || 4));
                     const rows = [
-                        { "学年度": selectedAcademicYear.value, "姓名": "系统管理员", "账号": "admin", "密码": "123456", "角色": "管理员", "年级": "", "学科": "" },
-                        { "学年度": selectedAcademicYear.value, "姓名": "教务主任", "账号": "dean", "密码": "123456", "角色": "教务主任", "年级": "", "学科": "" },
+                        { "学年度": selectedAcademicYear.value, "姓名": "系统管理员", "账号": "admin", "密码": "123456", "角色": "管理员", "年级": "", "学科": "", "账号要求": "英文/数字/下划线，不能填中文姓名" },
+                        { "学年度": selectedAcademicYear.value, "姓名": "教务主任", "账号": "dean", "密码": "123456", "角色": "教务主任", "年级": "", "学科": "", "账号要求": "英文/数字/下划线，不能填中文姓名" },
                     ];
                     const gradeSeeds = [
                         ["六年级", "g6"],
@@ -2965,7 +3037,8 @@
                                 "密码": "123456",
                                 "角色": "考核组长",
                                 "年级": grade,
-                                "学科": ""
+                                "学科": "",
+                                "账号要求": "英文/数字/下划线，不能填中文姓名"
                             });
                         }
                     });
