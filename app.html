@@ -572,7 +572,8 @@
                                     <button @click="downloadTeacherTemplate" class="text-xs text-china-red hover:underline font-bold"><i class="ti ti-download mr-1"></i>下载模板</button>
                                 </div>
                                 <p class="text-xs text-slate-warm leading-relaxed mb-6">
-                                    导入年级、学科及教师姓名名单。系统将根据姓名和拼音自动生成相匹配的系统账号，默认密码为 123456。
+                                    导入年级、学科及教师姓名名单。教师导入会统一按<strong class="text-ink">被考核教师</strong>处理；
+                                    <strong class="text-china-red">年级、学科、账号</strong>请按模板填写，账号只能用英文、数字或下划线。
                                 </p>
                             </div>
                             <label class="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-[#D6CAB2] bg-gray-50/50 hover:bg-[#F2ECE0]/30 cursor-pointer transition-all font-bold text-sm">
@@ -2886,7 +2887,7 @@
                                     "考核组长": "leader", "组长": "leader", "leader": "leader",
                                     "被考核教师": "teacher", "教师": "teacher", "teacher": "teacher"
                                 };
-                                const role = roleMap[roleText] || (mode === 'teacher' ? 'teacher' : 'teacher');
+                                const role = mode === 'teacher' ? 'teacher' : (roleMap[roleText] || 'teacher');
                                 if (currentUser.value?.role !== 'admin' && roleLevel(currentUser.value?.role) <= roleLevel(role)) {
                                     skippedCount++;
                                     importErrors.push(`第 ${i + 2} 行【${name}】：权限不足，不能导入等于或高于自己权限的角色。`);
@@ -2896,6 +2897,17 @@
                                 const grade = normalizeGrade(String(row["年级"] || "").trim());
                                 const subject = String(row["学科"] || row["科目"] || "").trim();
                                 const classes = String(row["任课班级"] || row["班级"] || "").trim();
+                                const rowAcademicYear = String(row["学年度"] || row["年度"] || "").trim();
+                                if (rowAcademicYear && rowAcademicYear !== selectedAcademicYear.value) {
+                                    skippedCount++;
+                                    importErrors.push(`第 ${i + 2} 行【${name}】：表内学年度为 ${rowAcademicYear}，当前页面选择的是 ${selectedAcademicYear.value}，请切换年度或修改模板后再导入。`);
+                                    continue;
+                                }
+                                if (mode === 'teacher' && (!grade || !subject)) {
+                                    skippedCount++;
+                                    importErrors.push(`第 ${i + 2} 行【${name}】：教师导入必须填写年级和学科。`);
+                                    continue;
+                                }
                                 
                                 const rawUsername = String(row["账号"] || row["用户名"] || "").trim();
                                 const usernameResult = makeImportUsername(rawUsername, { name, role, grade, rowIndex: i, leaderCounters, usedUsernames });
@@ -2918,8 +2930,13 @@
                                     skippedCount++;
                                     importErrors.push(`第 ${i + 2} 行【${name} / ${username}】：${createError.message}`);
                                 } else {
-                                    await upsertYearPerson(newUid, { role, grade, subject, classes });
-                                    importedCount++;
+                                    try {
+                                        await upsertYearPerson(newUid, { role, grade, subject, classes });
+                                        importedCount++;
+                                    } catch (yearError) {
+                                        skippedCount++;
+                                        importErrors.push(`第 ${i + 2} 行【${name} / ${username}】：账号已创建，但写入 ${selectedAcademicYear.value} 年度名单失败：${yearError.message}`);
+                                    }
                                 }
                                 
                                 // Progress animation
