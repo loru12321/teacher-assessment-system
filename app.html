@@ -1036,13 +1036,122 @@
                 <!-- VIEW 3: SUMMARY - FULL TABLE WITH DYNAMIC RANKS -->
                 <div v-if="activeTab === 'summary' && isAdminLike" class="space-y-6">
                     <div class="premium-card p-3">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                             <button v-for="item in summarySubModules" :key="item.key" @click="summarySubTab = item.key"
                                     class="px-4 py-3 rounded-xl text-left border transition-all"
                                     :class="summarySubTab === item.key ? 'bg-china-red text-white border-china-red shadow-md shadow-red-100' : 'bg-white border-[#D6CAB2] text-ink hover:bg-gray-50'">
                                 <span class="text-sm font-extrabold flex items-center gap-2"><i :class="item.icon"></i>{{ item.name }}</span>
                                 <p class="text-[11px] mt-1" :class="summarySubTab === item.key ? 'text-white/80' : 'text-slate-warm'">{{ item.desc }}</p>
                             </button>
+                        </div>
+                    </div>
+
+                    <!-- System Sync Reconciliation -->
+                    <div v-show="summarySubTab === 'sync'" class="space-y-6">
+                        <div class="premium-card p-6">
+                            <div class="flex items-start justify-between gap-4 flex-wrap border-b border-gray-100 pb-5 mb-5">
+                                <div>
+                                    <h3 class="text-lg font-extrabold flex items-center gap-2">
+                                        <i class="ti ti-cloud-check text-china-red text-xl"></i>system同步对账
+                                    </h3>
+                                    <p class="text-xs text-slate-warm mt-1 leading-relaxed">
+                                        查看从 schoolsystem.com.cn 自动同步到本系统的教师个人成绩项目。<strong class="text-china-red">教师个人成绩同步只限 7 月基准成绩</strong>；非 7 月成绩不应写入。
+                                    </p>
+                                </div>
+                                <button @click="clearInvalidSystemSyncScores"
+                                        :disabled="invalidSystemSyncScoreRows.length === 0 || !canEditSelectedYear"
+                                        class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold flex items-center gap-1.5">
+                                    <i class="ti ti-trash"></i>
+                                    清除非7月/来源不明同步分 {{ invalidSystemSyncScoreRows.length }}
+                                </button>
+                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 w-full lg:w-auto">
+                                    <div class="rounded-xl border border-[#D6CAB2] bg-blue-50 p-4">
+                                        <p class="text-[11px] font-bold text-blue-700">同步记录</p>
+                                        <p class="text-xl font-black text-blue-700 mt-1">{{ systemSyncCoverage.syncedRecords }} 条</p>
+                                    </div>
+                                    <div class="rounded-xl border border-[#D6CAB2] bg-white p-4">
+                                        <p class="text-[11px] font-bold text-slate-warm">覆盖教师</p>
+                                        <p class="text-xl font-black text-ink mt-1">{{ systemSyncCoverage.syncedTeachers }}/{{ systemSyncCoverage.totalTeachers }}</p>
+                                    </div>
+                                    <div class="rounded-xl border border-[#D6CAB2] bg-green-50 p-4">
+                                        <p class="text-[11px] font-bold text-green-700">覆盖率</p>
+                                        <p class="text-xl font-black text-green-700 mt-1">{{ systemSyncCoverage.coverageRate }}%</p>
+                                    </div>
+                                    <div class="rounded-xl border border-[#D6CAB2] bg-amber-50 p-4">
+                                        <p class="text-[11px] font-bold text-amber-700">7月规则</p>
+                                        <p class="text-sm font-black text-amber-700 mt-2">只限 7 月</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
+                                <div v-for="row in syncReconciliationRows" :key="row.id"
+                                     class="rounded-2xl border p-5"
+                                     :class="row.synced > 0 ? 'border-blue-200 bg-blue-50/60' : 'border-[#D6CAB2] bg-white'">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <h4 class="text-sm font-extrabold text-ink">{{ row.name }}</h4>
+                                            <p class="text-[11px] text-slate-warm font-bold mt-1">{{ row.source }}</p>
+                                        </div>
+                                        <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold"
+                                              :class="row.auto ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-slate-warm'">
+                                            {{ row.auto ? 'system可同步' : '手动填写' }}
+                                        </span>
+                                    </div>
+                                    <div class="grid grid-cols-3 gap-2 mt-4">
+                                        <div class="rounded-xl bg-white/80 border border-white p-3">
+                                            <p class="text-[10px] text-slate-warm font-bold">满分</p>
+                                            <p class="text-lg font-black text-ink">{{ row.max }}</p>
+                                        </div>
+                                        <div class="rounded-xl bg-white/80 border border-white p-3">
+                                            <p class="text-[10px] text-slate-warm font-bold">已同步</p>
+                                            <p class="text-lg font-black text-china-red">{{ row.synced }}</p>
+                                        </div>
+                                        <div class="rounded-xl bg-white/80 border border-white p-3">
+                                            <p class="text-[10px] text-slate-warm font-bold">缺同步</p>
+                                            <p class="text-lg font-black" :class="row.missing > 0 ? 'text-red-500' : 'text-green-700'">{{ row.missing }}</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-xs text-slate-warm leading-relaxed mt-4">
+                                        <strong class="text-ink">计算口径：</strong>{{ row.formula }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto rounded-xl border border-[#D6CAB2] bg-white">
+                                <table class="w-full text-left text-xs">
+                                    <thead class="bg-gray-50 border-b border-[#D6CAB2]">
+                                        <tr>
+                                            <th class="py-3 px-4 font-bold text-slate-warm">教师</th>
+                                            <th class="py-3 px-4 font-bold text-slate-warm">年级/学科</th>
+                                            <th class="py-3 px-4 font-bold text-slate-warm">同步项目</th>
+                                            <th class="py-3 px-4 font-bold text-slate-warm text-center">得分</th>
+                                            <th class="py-3 px-4 font-bold text-slate-warm">来源考试</th>
+                                            <th class="py-3 px-4 font-bold text-slate-warm">依据批注</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="item in systemSyncScoreRows" :key="item.id + item.projectId" class="border-b border-gray-100 hover:bg-blue-50/40">
+                                            <td class="py-3 px-4 font-extrabold text-ink">{{ item.teacherName }}</td>
+                                            <td class="py-3 px-4 font-bold text-slate-warm">{{ item.grade }} · {{ item.subject }}</td>
+                                            <td class="py-3 px-4 font-bold text-ink">{{ item.projectName }}</td>
+                                            <td class="py-3 px-4 text-center font-black text-china-red">{{ item.score }}</td>
+                                            <td class="py-3 px-4">
+                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold"
+                                                      :class="item.isJulySource ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'">
+                                                    {{ item.sourceExam || '来源考试未记录' }}
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4 text-slate-warm leading-relaxed max-w-md whitespace-normal">{{ item.note }}</td>
+                                        </tr>
+                                        <tr v-if="systemSyncScoreRows.length === 0">
+                                            <td colspan="6" class="py-8 text-center text-slate-warm font-bold">
+                                                当前学年度暂无 system 自动同步分值。7 月成绩上传并同步后，这里会显示每个项目的来源、数量和计算口径。
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -1359,6 +1468,10 @@
                                                class="text-[10px] font-extrabold text-amber-700 mt-1">
                                                 {{ scoreChangeLabel(targetTeacherRow.scores[project.id]) }}
                                             </p>
+                                            <p class="text-[10px] font-extrabold mt-1"
+                                               :class="targetTeacherRow.scores[project.id]?.change_tag === 'system_sync' ? 'text-blue-700' : 'text-slate-warm'">
+                                                {{ teacherScoreSourceLabel(targetTeacherRow.scores[project.id]) }}
+                                            </p>
                                         </td>
                                         <td class="py-3.5 px-5 font-medium text-slate-warm max-w-sm whitespace-normal leading-relaxed">
                                             {{ targetTeacherRow.scores[project.id]?.note || '-' }}
@@ -1543,6 +1656,33 @@
             { id: "class_high_school_contribution_grad", group: "class", stage: "毕业年级", name: "高中贡献率", max: 15, desc: "毕业年级班级考核项目，按普通公立高中过线人数比例计算。" },
             { id: "class_high_score_grad", group: "class", stage: "毕业年级", name: "高分段贡献", max: 15, desc: "毕业年级班级考核项目，按总分550分以上人数与最高班级相比折算。" }
         ];
+
+        const SYSTEM_SYNC_RULES = {
+            teacher_two_rates_one_score: {
+                source: "联考分析 · 两率一分",
+                formula: "只限 7 月基准成绩。主体54分按个人优秀率、及格率、平均分与最高学校/最高教师折算；优秀率增幅6分按本年度7月与上年度7月基准考试对比。"
+            },
+            teacher_class_collaboration: {
+                source: "教学管理 · 任教班级总分",
+                formula: "只限 7 月基准成绩。读取任教班级总分，按班级优秀率、及格率、平均分与最高班级成绩折算10分。"
+            },
+            teacher_subject_collaboration: {
+                source: "教学管理 · 本校同学科整体指标",
+                formula: "只限 7 月基准成绩。引用该教师所教学科的全校平均分、优秀率、及格率，与其他学校同学科最高指标折算10分。"
+            },
+            teacher_bottom_third: {
+                source: "联考分析 · 后1/3学生",
+                formula: "只限 7 月基准成绩。读取任教班级总分后1/3学生平均分，与乡镇最高后1/3学生平均分折算10分。"
+            },
+            teacher_excellent_contribution: {
+                source: "联考分析 · 7月期末/中考尖子生",
+                formula: "只限 7 月基准成绩。非毕业年级按第二学期期末乡镇前150名及学科位次累加；九年级按7月上传的中考成绩确定尖子生/优秀尖子后折算5分。"
+            },
+            teacher_workload: {
+                source: "考核系统手动填写",
+                formula: "system 暂无课时量来源，由考核组长、管理员或教务主任按学校课时量规则手动填写5分。"
+            }
+        };
 
         const getFillAcademicYearForDate = (date = new Date()) => {
             const year = date.getFullYear();
@@ -2228,6 +2368,7 @@
 
                 const summarySubModules = [
                     { key: "board", name: "汇总排名", icon: "ti ti-table", desc: "查看得分、总分、排名和明细。" },
+                    { key: "sync", name: "system同步对账", icon: "ti ti-cloud-check", desc: "查看自动同步数量、来源考试和计算口径。" },
                     { key: "filters", name: "筛选条件", icon: "ti ti-filter", desc: "按年级、学科、状态筛选。" }
                 ];
 
@@ -2622,6 +2763,123 @@
                     };
                 });
 
+                const getProjectById = (projectId) => {
+                    return PROJECTS.find(project => project.id === projectId) || { id: projectId, name: projectId, max: 0, group: 'teacher' };
+                };
+
+                const parseSourceExam = (record) => {
+                    const text = `${record?.change_note || ''} ${record?.note || ''}`;
+                    const sourceMatch = text.match(/来源考试[：:]\s*([^；;\n]+)/);
+                    const dateMatch = text.match(/(20\d{2})[-/年.](\d{1,2})(?:[-/月.](\d{1,2}))?/);
+                    const date = dateMatch
+                        ? `${dateMatch[1]}-${String(dateMatch[2]).padStart(2, '0')}${dateMatch[3] ? '-' + String(dateMatch[3]).padStart(2, '0') : ''}`
+                        : '';
+                    return sourceMatch ? sourceMatch[1].trim() : date;
+                };
+
+                const isJulySource = (sourceText) => {
+                    return /(^|[-/年.])0?7([-/月.]|$)/.test(String(sourceText || ''));
+                };
+
+                const teacherScoreSourceLabel = (record) => {
+                    if (!record) return '尚未录入';
+                    if (record.change_tag === 'system_sync') return '分数来源：system自动同步';
+                    if (record.change_tag === 'admin_override') return '分数来源：管理员/教务主任调整';
+                    if (record.change_tag === 'leader_revised') return '分数来源：考核组长复改';
+                    if (record.scorer_name) return `分数来源：${record.scorer_name}`;
+                    return '分数来源：手动填写';
+                };
+
+                const systemSyncScoreRows = computed(() => {
+                    const teacherMap = new Map(teachers.value.map(teacher => [teacher.id, teacher]));
+                    return assessmentScores.value
+                        .filter(record => record.change_tag === 'system_sync')
+                        .map(record => {
+                            const teacher = teacherMap.get(record.teacher_id) || {};
+                            const project = getProjectById(record.project_id);
+                            const sourceExam = parseSourceExam(record);
+                            return {
+                                id: record.id || `${record.teacher_id}-${record.project_id}`,
+                                teacherId: record.teacher_id,
+                                teacherName: teacher.full_name || record.teacher_id,
+                                grade: normalizeGrade(teacher.grade) || teacher.grade || '-',
+                                subject: teacher.subject || '-',
+                                projectId: record.project_id,
+                                projectName: project.name,
+                                score: record.score,
+                                sourceExam,
+                                isJulySource: isJulySource(sourceExam),
+                                note: record.change_note || record.note || '由 schoolsystem.com.cn 自动同步'
+                            };
+                        })
+                        .sort((a, b) => {
+                            const projectOrder = String(a.projectName || '').localeCompare(String(b.projectName || ''), 'zh-CN', { numeric: true });
+                            if (projectOrder !== 0) return projectOrder;
+                            return String(a.teacherName || '').localeCompare(String(b.teacherName || ''), 'zh-CN', { numeric: true });
+                        });
+                });
+
+                const invalidSystemSyncScoreRows = computed(() => {
+                    return systemSyncScoreRows.value.filter(row => !row.isJulySource);
+                });
+
+                const syncReconciliationRows = computed(() => {
+                    return teacherProjects.map(project => {
+                        const rule = SYSTEM_SYNC_RULES[project.id] || {};
+                        const synced = systemSyncScoreRows.value.filter(row => row.projectId === project.id).length;
+                        const applicableTeachers = teachers.value.filter(teacher => projectAppliesToGrade(project, teacher.grade)).length;
+                        const auto = project.id !== 'teacher_workload';
+                        return {
+                            id: project.id,
+                            name: project.name,
+                            max: project.max,
+                            auto,
+                            source: rule.source || '考核系统',
+                            formula: rule.formula || project.desc,
+                            synced,
+                            missing: auto ? Math.max(applicableTeachers - synced, 0) : 0
+                        };
+                    });
+                });
+
+                const systemSyncCoverage = computed(() => {
+                    const syncedTeacherIds = new Set(systemSyncScoreRows.value.map(row => row.teacherId));
+                    const totalTeachers = teachers.value.length;
+                    const syncedTeachers = syncedTeacherIds.size;
+                    return {
+                        syncedRecords: systemSyncScoreRows.value.length,
+                        totalTeachers,
+                        syncedTeachers,
+                        coverageRate: totalTeachers ? Math.round((syncedTeachers / totalTeachers) * 100) : 0
+                    };
+                });
+
+                const clearInvalidSystemSyncScores = async () => {
+                    const rows = invalidSystemSyncScoreRows.value;
+                    if (!rows.length) {
+                        alert('当前没有需要清除的非7月或来源不明 system 同步分。');
+                        return;
+                    }
+                    if (!confirm(`确认清除 ${rows.length} 条非7月/来源不明的 system 自动同步分吗？\n\n这些分数来自旧同步口径，清除后对应项目会恢复为缺项，等待7月基准成绩自动同步或由组长手动填写。`)) return;
+                    setLoading(true, '正在清除错误同步分...');
+                    try {
+                        const ids = rows.map(row => row.id).filter(Boolean);
+                        const { error } = await sbClient
+                            .from('assessment_scores')
+                            .delete()
+                            .eq('academic_year', selectedAcademicYear.value)
+                            .eq('change_tag', 'system_sync')
+                            .in('id', ids);
+                        if (error) throw error;
+                        await loadAllData();
+                        alert(`已清除 ${ids.length} 条非7月/来源不明 system 自动同步分。`);
+                    } catch (e) {
+                        alert('清除失败: ' + e.message);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+
                 // Calculation calculations for Summary Board
                 const summaryRows = computed(() => {
                     const rows = teachers.value.map(teacher => {
@@ -2644,7 +2902,8 @@
                                     change_note: rec.change_note,
                                     previous_score: rec.previous_score,
                                     previous_note: rec.previous_note,
-                                    change_count: rec.change_count
+                                    change_count: rec.change_count,
+                                    updated_at: rec.updated_at
                                 };
                                 if (p.group === 'teacher') {
                                     teacherTotal += Number(rec.score || 0);
@@ -3395,9 +3654,15 @@
                     submittedScoresCount,
                     missingTeachersCount,
                     summaryAuditStats,
+                    syncReconciliationRows,
+                    systemSyncCoverage,
+                    systemSyncScoreRows,
+                    invalidSystemSyncScoreRows,
                     summaryRows,
                     getTeacherApplicableProjects,
                     toggleSummaryDetails,
+                    teacherScoreSourceLabel,
+                    clearInvalidSystemSyncScores,
                     
                     applyDefaultAssignmentsForGrade,
                     clearAssignmentsForGrade,
